@@ -8,7 +8,7 @@ Autores: Juan David Sierra, Juan José Palacio, Camilo Soto.
 
 **Comprar pase premium de un Evento**, refactorizado a capas: CBV delgada, `CompraService`, `OrdenBuilder` y `PasarelaFactory` (`ENV_TYPE=MOCK` / `REAL`).
 
-Documentación: [`wiki/Implementacion-del-Patron-Creacional.md`](wiki/Implementacion-del-Patron-Creacional.md). Al publicar, copiar esa página a la Wiki de GitHub con el título **Implementación del Patrón Creacional**.
+Documentación: Wiki del repo, página **[Implementación del Patrón Creacional](https://github.com/jdj40211/pronostix/wiki)**.
 
 ## Cómo ejecutar
 
