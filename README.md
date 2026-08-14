@@ -1,17 +1,56 @@
 # Pronostix
 
-Plataforma de **proyecciones estadísticas para apuestas deportivas** de cualquier deporte y liga (fútbol, básquetbol, tenis, e-sports, etc.). Para cada evento calcula, con un modelo propio, las probabilidades de todos los mercados de análisis (resultado / moneyline, totales over-under, hándicap, anotadores).
+Plataforma de **proyecciones estadísticas para apuestas deportivas** de cualquier deporte y liga. Es análisis de entretenimiento: muestra probabilidades; **nunca recibe apuestas**. Los cobros (suscripción y pase premium) pasan por una **pasarela de pago propia**.
 
-Es **análisis de entretenimiento e información, no una casa de apuestas**: solo muestra probabilidades; nunca recibe ni procesa apuestas. Incluye transacciones (suscripciones y pases premium) y una **pasarela de pago propia**.
+Autores: Juan David Sierra, Juan José Palacio, Camilo Soto.
 
-Proyecto académico. Implementación prevista sobre **Django**.
+## Taller 01 — flujo crítico
 
-## Contenido
+**Comprar pase premium de un Evento**, refactorizado a capas: CBV delgada, `CompraService`, `OrdenBuilder` y `PasarelaFactory` (`ENV_TYPE=MOCK` / `REAL`).
 
-- `Pronostix-Actividad1.pdf` — Actividad 1: Diseño del Núcleo de Negocio (Domain Design). Business case, diagrama de clases (15 entidades en 3 módulos) y análisis de modularidad (Strangler Test).
+Documentación: [`wiki/Implementacion-del-Patron-Creacional.md`](wiki/Implementacion-del-Patron-Creacional.md). Al publicar, copiar esa página a la Wiki de GitHub con el título **Implementación del Patrón Creacional**.
 
-## Autores
+## Cómo ejecutar
 
-- Juan David Sierra
-- Juan José Palacio
-- Camilo Soto
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_pronostix
+python manage.py runserver
+```
+
+Abra http://127.0.0.1:8000/ y compre un pase.
+
+## Factory: MOCK vs REAL
+
+```powershell
+# Consola (sin log real)
+$env:ENV_TYPE="MOCK"; python manage.py runserver
+
+# Log de auditoria pasarela_CAMILO_SOTO.log
+$env:ENV_TYPE="REAL"; python manage.py runserver
+```
+
+## Estructura
+
+```
+ventas/
+  views.py              Capa de interfaz (CBV delgada)
+  services.py           Capa de aplicacion (orquesta Builder + Factory)
+  domain/builders.py    Patron Builder (Fluent Interface)
+  domain/interfaces.py  Abstraccion PasarelaPago (DIP)
+  infra/factories.py    Patron Factory (ENV_TYPE)
+  infra/gateways.py     MOCK (consola) y REAL (pasarela propia)
+```
+
+## Tests
+
+```powershell
+python manage.py test
+```
+
+## Contenido de dominio
+
+- `Pronostix-Actividad1.pdf` — Actividad 1: diseño del núcleo de negocio (15 entidades, 3 módulos).
