@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Comprar pase - {{ evento }}</title>
+    <style>
+        body { font-family: Segoe UI, sans-serif; max-width: 640px; margin: 40px auto; color: #222; }
+        .ok { color: #0a5; font-weight: bold; }
+        .err { color: #c00; border: 1px solid #c00; padding: 10px; }
+        button { margin-top: 16px; padding: 10px 18px; background: #0a7; color: #fff; border: 0; cursor: pointer; }
+        .muted { color: #666; }
+    </style>
+</head>
+<body>
+    <p><a href="{% url 'catalogo' %}">Volver al catalogo</a></p>
+    <h1>Pase premium</h1>
+    <p><strong>{{ evento.local }} vs {{ evento.visitante }}</strong></p>
+    <p class="muted">
+        ${{ evento.precio_pase }} + IVA 19%.
+        La pasarela la decide <code>PasarelaFactory</code> segun <code>ENV_TYPE</code>.
+    </p>
+
+    {% if mensaje_exito %}
+        <p class="ok">{{ mensaje_exito }}</p>
+        <p>Estado: {{ orden.estado }} | Total ${{ orden.total }}</p>
+        <a href="{% url 'catalogo' %}">Otro evento</a>
+    {% else %}
+        {% if error %}<div class="err">{{ error }}</div>{% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit">Pagar pase con pasarela propia</button>
+        </form>
+    {% endif %}
+</body>
+</html>

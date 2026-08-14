@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Pronostix - Eventos</title>
+    <style>
+        body { font-family: Segoe UI, sans-serif; max-width: 760px; margin: 40px auto; color: #222; }
+        a { color: #0a7; }
+        li { margin-bottom: 14px; }
+        .muted { color: #666; }
+    </style>
+</head>
+<body>
+    <h1>Pronostix</h1>
+    <p class="muted">Pases premium por evento. Flujo critico: Comprar Pase (Service + Factory + Builder).</p>
+    {% if eventos %}
+        <ul>
+            {% for evento in eventos %}
+                <li>
+                    <strong>{{ evento.local }} vs {{ evento.visitante }}</strong>
+                    — {{ evento.competicion.nombre }}
+                    — ${{ evento.precio_pase }}
+                    — <a href="{% url 'comprar_pase' evento.id %}">Comprar pase</a>
+                    <br><span class="muted">{{ evento.fecha }} · {{ evento.fase }} · {{ evento.sede }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay eventos. Ejecute: <code>python manage.py seed_pronostix</code></p>
+    {% endif %}
+</body>
+</html>
