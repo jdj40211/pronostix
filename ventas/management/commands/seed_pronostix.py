@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from ventas.models import Competicion, Equipo, Evento, Plan
+from ventas.models import Competicion, Equipo, Evento, Mercado, Plan, Prediccion
+from ventas.services import PrediccionService
 
 
 class Command(BaseCommand):
@@ -73,3 +74,21 @@ class Command(BaseCommand):
             },
         )
         self.stdout.write(self.style.SUCCESS('Planes y eventos listos.'))
+        self._sembrar_mercados()
+
+    def _sembrar_mercados(self):
+        tipos = [
+            ('moneyline', False),
+            ('totales', True),
+            ('handicap', True),
+        ]
+        for evento in Evento.objects.select_related('competicion'):
+            for tipo, premium in tipos:
+                Mercado.objects.get_or_create(
+                    evento=evento,
+                    tipo=tipo,
+                    defaults={'es_premium': premium},
+                )
+            if not Prediccion.objects.filter(mercado__evento=evento).exists():
+                PrediccionService().generar_para(evento)
+        self.stdout.write(self.style.SUCCESS('Mercados y predicciones listos.'))
