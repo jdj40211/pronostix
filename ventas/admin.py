@@ -1,6 +1,18 @@
 from django.contrib import admin
 
-from .models import Competicion, Equipo, Evento, LineaOrden, Orden, Plan, Transaccion
+from .models import (
+    Competicion,
+    Equipo,
+    Evento,
+    LineaOrden,
+    Mercado,
+    ModeloPredictivo,
+    Orden,
+    Plan,
+    Prediccion,
+    Suscripcion,
+    Transaccion,
+)
 
 
 @admin.register(Plan)
@@ -37,3 +49,23 @@ class TxInline(admin.TabularInline):
 class OrdenAdmin(admin.ModelAdmin):
     list_display = ('id', 'usuario', 'total', 'estado', 'fecha_creacion')
     inlines = [LineaInline, TxInline]
+
+
+@admin.register(Suscripcion)
+class SuscripcionAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'plan', 'estado', 'fecha_inicio', 'fecha_fin')
+
+
+@admin.register(ModeloPredictivo)
+class ModeloPredictivoAdmin(admin.ModelAdmin):
+    list_display = ('version', 'deporte', 'fecha_calibracion')
+
+
+@admin.register(Mercado)
+class MercadoAdmin(admin.ModelAdmin):
+    list_display = ('evento', 'tipo', 'es_premium')
+
+
+@admin.register(Prediccion)
+class PrediccionAdmin(admin.ModelAdmin):
+    list_display = ('mercado', 'version_modelo', 'valor_esperado', 'fecha_calculo')
