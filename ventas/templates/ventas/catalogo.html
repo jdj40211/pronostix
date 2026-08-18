@@ -12,7 +12,7 @@
 </head>
 <body>
     <h1>Pronostix</h1>
-    <p class="muted">Pases premium por evento. Flujo critico: Comprar Pase (Service + Factory + Builder).</p>
+    <p class="muted">Proyecciones estadisticas. El moneyline es free; totales y handicap se desbloquean con pase o plan.</p>
     {% if eventos %}
         <ul>
             {% for evento in eventos %}
@@ -20,6 +20,7 @@
                     <strong>{{ evento.local }} vs {{ evento.visitante }}</strong>
                     — {{ evento.competicion.nombre }}
                     — ${{ evento.precio_pase }}
+                    — <a href="{% url 'evento_detalle' evento.id %}">Ver mercados</a>
                     — <a href="{% url 'comprar_pase' evento.id %}">Comprar pase</a>
                     <br><span class="muted">{{ evento.fecha }} · {{ evento.fase }} · {{ evento.sede }}</span>
                 </li>

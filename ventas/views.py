@@ -3,7 +3,7 @@ from django.views import View
 
 from .infra.factories import PasarelaFactory
 from .models import Evento
-from .services import CompraService
+from .services import CompraService, PrediccionService
 
 
 class CatalogoView(View):
@@ -25,3 +25,12 @@ class ComprarPaseView(View):
     def post(self, request, evento_id):
         ctx = self.setup_service().crear(request, evento_id)
         return render(request, self.template_name, ctx, status=400 if ctx.get('error') else 200)
+
+
+class EventoDetalleView(View):
+    def get(self, request, evento_id):
+        return render(
+            request,
+            'ventas/evento.html',
+            PrediccionService().detalle(request, evento_id),
+        )

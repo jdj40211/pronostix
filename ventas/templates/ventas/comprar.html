@@ -23,7 +23,8 @@
     {% if mensaje_exito %}
         <p class="ok">{{ mensaje_exito }}</p>
         <p>Estado: {{ orden.estado }} | Total ${{ orden.total }}</p>
-        <a href="{% url 'catalogo' %}">Otro evento</a>
+        <a href="{% url 'evento_detalle' evento.id %}">Ver mercados desbloqueados</a>
+        · <a href="{% url 'catalogo' %}">Otro evento</a>
     {% else %}
         {% if error %}<div class="err">{{ error }}</div>{% endif %}
         <form method="post">

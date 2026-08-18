@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>{{ evento }} - Pronostix</title>
+    <style>
+        body { font-family: Segoe UI, sans-serif; max-width: 720px; margin: 40px auto; color: #222; }
+        a { color: #0a7; }
+        .muted { color: #666; }
+        .lock { color: #a60; }
+        .ok { color: #0a5; }
+        li { margin-bottom: 16px; }
+        .probs { font-family: Consolas, monospace; }
+    </style>
+</head>
+<body>
+    <p><a href="{% url 'catalogo' %}">Volver al catalogo</a></p>
+    <h1>{{ evento.local }} vs {{ evento.visitante }}</h1>
+    <p class="muted">{{ evento.competicion }} · {{ evento.fase }} · {{ evento.sede }}</p>
+    <p><a href="{% url 'comprar_pase' evento.id %}">Comprar pase premium</a></p>
+
+    {% if mercados %}
+        <ul>
+            {% for item in mercados %}
+                <li>
+                    <strong>{{ item.mercado.get_tipo_display }}</strong>
+                    {% if item.mercado.es_premium %}
+                        <span class="muted">premium</span>
+                    {% else %}
+                        <span class="muted">free</span>
+                    {% endif %}
+                    {% if item.bloqueado %}
+                        <p class="lock">Mercado bloqueado. Compre el pase de este evento o un plan Premium/Pro.</p>
+                    {% elif item.prediccion %}
+                        <p class="ok">Mas probable: {{ item.prediccion.mas_probable }} (VE {{ item.prediccion.valor_esperado }})</p>
+                        <p class="probs muted">{{ item.prediccion.probabilidades }} · {{ item.prediccion.version_modelo }}</p>
+                    {% else %}
+                        <p class="muted">Sin prediccion vigente.</p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="muted">Este evento aun no tiene mercados. Ejecute <code>python manage.py seed_pronostix</code>.</p>
+    {% endif %}
+</body>
+</html>
