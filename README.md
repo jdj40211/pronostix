@@ -21,7 +21,7 @@ python manage.py seed_pronostix
 python manage.py runserver
 ```
 
-Abra http://127.0.0.1:8000/ y compre un pase.
+Abra http://127.0.0.1:8000/ para ver eventos. El **moneyline** es free; totales y handicap se desbloquean con el pase del evento o un plan Premium/Pro vigente.
 
 ## Factory: MOCK vs REAL
 
@@ -38,8 +38,10 @@ $env:ENV_TYPE="REAL"; python manage.py runserver
 ```
 ventas/
   views.py              Capa de interfaz (CBV delgada)
-  services.py           Capa de aplicacion (orquesta Builder + Factory)
+  services.py           CompraService y PrediccionService
   domain/builders.py    Patron Builder (Fluent Interface)
+  domain/acceso.py      Derecho de uso (pase o suscripcion)
+  domain/modelo.py      Calculo de probabilidades por deporte
   domain/interfaces.py  Abstraccion PasarelaPago (DIP)
   infra/factories.py    Patron Factory (ENV_TYPE)
   infra/gateways.py     MOCK (consola) y REAL (pasarela propia)

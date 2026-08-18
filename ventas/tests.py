@@ -7,11 +7,13 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from ventas.domain.acceso import AccesoMercado
 from ventas.domain.builders import OrdenBuilder
+from ventas.domain.modelo import MotorPronostico
 from ventas.infra.factories import PasarelaFactory
 from ventas.infra.gateways import MockPasarela, PasarelaPronostix
-from ventas.models import Competicion, Equipo, Evento, Orden, Plan
-from ventas.services import CompraService
+from ventas.models import Competicion, Equipo, Evento, Mercado, Orden, Plan, Suscripcion
+from ventas.services import CompraService, PrediccionService
 
 
 class _Fixtures:
@@ -116,3 +118,60 @@ class ComprarPaseViewTest(TestCase, _Fixtures):
         response = self.client.post(reverse('comprar_pase', args=[self.evento.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Orden.objects.filter(estado='pagada').count(), 1)
+
+
+class AccesoMercadoTest(TestCase, _Fixtures):
+    def setUp(self):
+        self.usuario = get_user_model().objects.create_user('camilo_soto', password='x')
+        self.evento = self.crear_evento()
+        self.free = Mercado.objects.create(evento=self.evento, tipo='moneyline', es_premium=False)
+        self.premium = Mercado.objects.create(evento=self.evento, tipo='totales', es_premium=True)
+
+    def test_moneyline_free_siempre_visible(self):
+        self.assertTrue(AccesoMercado.puede_ver(self.usuario, self.free))
+
+    def test_premium_bloqueado_sin_pase(self):
+        self.assertFalse(AccesoMercado.puede_ver(self.usuario, self.premium))
+
+    def test_premium_se_abre_con_pase_pagado(self):
+        OrdenBuilder().para_usuario(self.usuario).con_pase_de(self.evento).build()
+        Orden.objects.filter(usuario=self.usuario).update(estado='pagada')
+        self.assertTrue(AccesoMercado.puede_ver(self.usuario, self.premium))
+
+    def test_premium_se_abre_con_plan_vigente(self):
+        plan = Plan.objects.create(
+            nombre='Premium',
+            precio_mensual=39000,
+            mercados_incluidos='moneyline, totales, handicap',
+            limite_consultas_dia=50,
+        )
+        ahora = timezone.now()
+        Suscripcion.objects.create(
+            usuario=self.usuario,
+            plan=plan,
+            fecha_inicio=ahora,
+            fecha_fin=ahora + timedelta(days=30),
+            estado='activa',
+        )
+        self.assertTrue(AccesoMercado.puede_ver(self.usuario, self.premium))
+
+
+class MotorPronosticoTest(TestCase):
+    def test_futbol_moneyline_suma_uno(self):
+        probs = MotorPronostico.calcular_probabilidades('futbol', 'moneyline')
+        self.assertAlmostEqual(sum(probs.values()), 1.0)
+        self.assertIn('empate', probs)
+
+
+class EventoDetalleViewTest(TestCase, _Fixtures):
+    def setUp(self):
+        self.evento = self.crear_evento()
+        Mercado.objects.create(evento=self.evento, tipo='moneyline', es_premium=False)
+        Mercado.objects.create(evento=self.evento, tipo='totales', es_premium=True)
+        PrediccionService().generar_para(self.evento)
+
+    def test_get_muestra_mercados(self):
+        response = self.client.get(reverse('evento_detalle', args=[self.evento.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'moneyline')
+        self.assertContains(response, 'bloqueado')
