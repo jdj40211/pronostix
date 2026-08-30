@@ -3,8 +3,9 @@ from django.shortcuts import get_object_or_404
 
 from .domain.acceso import AccesoMercado
 from .domain.builders import OrdenBuilder
+from .domain.exceptions import ConflictoNegocio, EventoNoEncontrado
 from .domain.modelo import MotorPronostico
-from .models import Evento, ModeloPredictivo, Prediccion, Transaccion
+from .models import Evento, LineaOrden, ModeloPredictivo, Prediccion, Transaccion
 
 
 def usuario_de(request):
@@ -27,34 +28,62 @@ class CompraService:
         evento = get_object_or_404(Evento, id=evento_id)
         return {'evento': evento}
 
+    def crear_api(self, request, evento_id):
+        try:
+            evento = Evento.objects.get(id=evento_id)
+        except Evento.DoesNotExist as exc:
+            raise EventoNoEncontrado('El evento no existe.') from exc
+
+        usuario = usuario_de(request)
+        ya_pagado = LineaOrden.objects.filter(
+            evento=evento,
+            concepto='pase',
+            orden__usuario=usuario,
+            orden__estado='pagada',
+        ).exists()
+        if ya_pagado:
+            raise ConflictoNegocio('Ya existe un pase pagado para este evento.')
+
+        try:
+            orden = (
+                self.builder
+                .para_usuario(usuario)
+                .con_pase_de(evento)
+                .build()
+            )
+        except ValueError as exc:
+            raise ConflictoNegocio(str(exc)) from exc
+
+        transaccion = Transaccion.objects.create(
+            orden=orden,
+            monto=orden.total,
+            moneda=orden.moneda,
+        )
+        if not self.pasarela.procesar(transaccion):
+            orden.delete()
+            raise ValueError('La pasarela rechazo el pago.')
+        orden.confirmar_pago()
+        return {'orden': orden, 'transaccion': transaccion, 'evento': evento}
+
     def crear(self, request, evento_id):
         evento = get_object_or_404(Evento, id=evento_id)
         contexto = {'evento': evento}
         try:
-            orden = (
-                self.builder
-                .para_usuario(usuario_de(request))
-                .con_pase_de(evento)
-                .build()
-            )
-            transaccion = Transaccion.objects.create(
-                orden=orden,
-                monto=orden.total,
-                moneda=orden.moneda,
-            )
-            if not self.pasarela.procesar(transaccion):
-                orden.delete()
-                raise ValueError('La pasarela rechazo el pago.')
-            orden.confirmar_pago()
-            contexto['orden'] = orden
-            contexto['transaccion'] = transaccion
+            resultado = self.crear_api(request, evento_id)
+            contexto['orden'] = resultado['orden']
+            contexto['transaccion'] = resultado['transaccion']
             contexto['mensaje_exito'] = (
-                f'Orden {orden.id} pagada. Total ${orden.total}. '
-                f'Ref {transaccion.referencia}.'
+                f'Orden {resultado["orden"].id} pagada. Total ${resultado["orden"].total}. '
+                f'Ref {resultado["transaccion"].referencia}.'
             )
-        except (KeyError, ValueError) as exc:
+        except (KeyError, ValueError, ConflictoNegocio) as exc:
             contexto['error'] = str(exc) if str(exc) else 'No se pudo completar la compra.'
         return contexto
+
+
+class CatalogoService:
+    def listar(self):
+        return Evento.objects.select_related('local', 'visitante', 'competicion')
 
 
 class PrediccionService:
