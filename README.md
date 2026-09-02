@@ -4,11 +4,11 @@ Plataforma de **proyecciones estadísticas para apuestas deportivas** de cualqui
 
 Autores: Juan David Sierra, Juan José Palacio, Camilo Soto.
 
-## Taller 01 — flujo crítico
+## Taller 01 / Entregable 1 (avance)
 
-**Comprar pase premium de un Evento**, refactorizado a capas: CBV delgada, `CompraService`, `OrdenBuilder` y `PasarelaFactory` (`ENV_TYPE=MOCK` / `REAL`).
+Flujo critico **comprar pase premium**: CBV y APIView delgadas, logica en `CompraService`, `OrdenBuilder` y `PasarelaFactory`. Los modelos Django solo persisten; las reglas viven en `domain/`.
 
-Documentación: Wiki del repo, página **[Implementación del Patrón Creacional](https://github.com/jdj40211/pronostix/wiki)**.
+Documentacion del patron creacional: Wiki **[Implementación del Patrón Creacional](https://github.com/jdj40211/pronostix/wiki)**.
 
 ## Cómo ejecutar
 
@@ -37,8 +37,10 @@ $env:ENV_TYPE="REAL"; python manage.py runserver
 
 ```
 ventas/
-  views.py              Capa de interfaz (CBV delgada)
-  services.py           CompraService y PrediccionService
+  views.py              Capa de interfaz (CBV delgada, sin ORM)
+  api/views.py          APIView + serializers (sin logica de negocio)
+  services.py           CompraService, CatalogoService, PrediccionService
+  domain/logic.py       IVA, reglas de plan y evento
   domain/builders.py    Patron Builder (Fluent Interface)
   domain/acceso.py      Derecho de uso (pase o suscripcion)
   domain/modelo.py      Calculo de probabilidades por deporte

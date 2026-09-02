@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 
 from .domain.acceso import AccesoMercado
 from .domain.builders import OrdenBuilder
@@ -25,14 +24,16 @@ class CompraService:
         self.builder = OrdenBuilder()
 
     def preparar(self, evento_id):
-        evento = get_object_or_404(Evento, id=evento_id)
-        return {'evento': evento}
+        return {'evento': self._evento(evento_id)}
 
-    def crear_api(self, request, evento_id):
+    def _evento(self, evento_id):
         try:
-            evento = Evento.objects.get(id=evento_id)
+            return Evento.objects.select_related('local', 'visitante', 'competicion').get(id=evento_id)
         except Evento.DoesNotExist as exc:
             raise EventoNoEncontrado('El evento no existe.') from exc
+
+    def crear_api(self, request, evento_id):
+        evento = self._evento(evento_id)
 
         usuario = usuario_de(request)
         ya_pagado = LineaOrden.objects.filter(
@@ -66,7 +67,7 @@ class CompraService:
         return {'orden': orden, 'transaccion': transaccion, 'evento': evento}
 
     def crear(self, request, evento_id):
-        evento = get_object_or_404(Evento, id=evento_id)
+        evento = self._evento(evento_id)
         contexto = {'evento': evento}
         try:
             resultado = self.crear_api(request, evento_id)
@@ -76,7 +77,10 @@ class CompraService:
                 f'Orden {resultado["orden"].id} pagada. Total ${resultado["orden"].total}. '
                 f'Ref {resultado["transaccion"].referencia}.'
             )
-        except (KeyError, ValueError, ConflictoNegocio) as exc:
+        except ConflictoNegocio as exc:
+            contexto['error'] = str(exc)
+            contexto['conflicto'] = True
+        except (KeyError, ValueError) as exc:
             contexto['error'] = str(exc) if str(exc) else 'No se pudo completar la compra.'
         return contexto
 
@@ -88,18 +92,19 @@ class CatalogoService:
 
 class PrediccionService:
     def detalle(self, request, evento_id):
-        evento = get_object_or_404(
-            Evento.objects.select_related('local', 'visitante', 'competicion'),
-            id=evento_id,
-        )
+        try:
+            evento = Evento.objects.select_related('local', 'visitante', 'competicion').get(id=evento_id)
+        except Evento.DoesNotExist as exc:
+            raise EventoNoEncontrado('El evento no existe.') from exc
         usuario = usuario_de(request)
         mercados = []
         for mercado in evento.mercados.all():
             visible = AccesoMercado.puede_ver(usuario, mercado)
-            prediccion = mercado.prediccion_vigente()
+            prediccion = AccesoMercado.prediccion_vigente(mercado) if visible else None
             mercados.append({
                 'mercado': mercado,
-                'prediccion': prediccion if visible else None,
+                'prediccion': prediccion,
+                'mas_probable': MotorPronostico.mas_probable(prediccion.probabilidades) if prediccion else None,
                 'bloqueado': not visible,
             })
         return {'evento': evento, 'mercados': mercados}

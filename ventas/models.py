@@ -9,15 +9,6 @@ class Plan(models.Model):
     mercados_incluidos = models.CharField(max_length=200)
     limite_consultas_dia = models.PositiveIntegerField()
 
-    def es_gratuito(self):
-        return self.precio_mensual == 0
-
-    def incluye_mercado(self, tipo):
-        incluidos = self.mercados_incluidos.lower()
-        if 'todos' in incluidos:
-            return True
-        return tipo.lower() in incluidos
-
     def __str__(self):
         return self.nombre
 
@@ -35,20 +26,6 @@ class Suscripcion(models.Model):
     fecha_fin = models.DateTimeField()
     estado = models.CharField(max_length=20, choices=ESTADOS, default='activa')
     renovacion_auto = models.BooleanField(default=True)
-
-    def esta_vigente(self):
-        ahora = timezone.now()
-        return self.estado == 'activa' and self.fecha_inicio <= ahora <= self.fecha_fin
-
-    def cancelar(self):
-        self.estado = 'cancelada'
-        self.renovacion_auto = False
-        self.save(update_fields=['estado', 'renovacion_auto'])
-
-    def dias_restantes(self):
-        if not self.esta_vigente():
-            return 0
-        return (self.fecha_fin - timezone.now()).days
 
     def __str__(self):
         return f'{self.usuario} - {self.plan} ({self.estado})'
@@ -93,12 +70,6 @@ class Evento(models.Model):
     es_premium = models.BooleanField(default=True)
     precio_pase = models.DecimalField(max_digits=10, decimal_places=2)
 
-    def ha_finalizado(self):
-        return self.estado == 'finalizado'
-
-    def esta_en_vivo(self):
-        return self.estado == 'en_vivo'
-
     def __str__(self):
         return f'{self.local} vs {self.visitante}'
 
@@ -120,9 +91,6 @@ class Orden(models.Model):
         self.estado = 'pagada'
         self.save(update_fields=['estado'])
 
-    def esta_pagada(self):
-        return self.estado == 'pagada'
-
     def __str__(self):
         return f'Orden {self.id} ({self.estado})'
 
@@ -135,9 +103,6 @@ class LineaOrden(models.Model):
     cantidad = models.PositiveIntegerField(default=1)
     plan = models.ForeignKey(Plan, null=True, blank=True, on_delete=models.SET_NULL)
     evento = models.ForeignKey(Evento, null=True, blank=True, on_delete=models.SET_NULL)
-
-    def subtotal(self):
-        return self.precio_unitario * self.cantidad
 
 
 class Transaccion(models.Model):
@@ -166,9 +131,6 @@ class Transaccion(models.Model):
         self.fecha_procesado = timezone.now()
         self.save(update_fields=['estado', 'referencia', 'fecha_procesado'])
 
-    def esta_aprobada(self):
-        return self.estado == 'aprobada'
-
 
 class ModeloPredictivo(models.Model):
     version = models.CharField(max_length=40)
@@ -192,9 +154,6 @@ class Mercado(models.Model):
     tipo = models.CharField(max_length=40, choices=TIPOS)
     es_premium = models.BooleanField(default=False)
 
-    def prediccion_vigente(self):
-        return self.predicciones.order_by('-fecha_calculo').first()
-
     def __str__(self):
         return f'{self.evento} - {self.tipo}'
 
@@ -206,14 +165,6 @@ class Prediccion(models.Model):
     valor_esperado = models.FloatField(default=0)
     fecha_calculo = models.DateTimeField(auto_now_add=True)
     version_modelo = models.CharField(max_length=40)
-
-    def mas_probable(self):
-        if not self.probabilidades:
-            return None
-        return max(self.probabilidades, key=self.probabilidades.get)
-
-    def probabilidad_de(self, opcion):
-        return self.probabilidades.get(opcion)
 
     def __str__(self):
         return f'{self.mercado.tipo} {self.version_modelo}'

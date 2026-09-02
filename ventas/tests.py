@@ -119,6 +119,12 @@ class ComprarPaseViewTest(TestCase, _Fixtures):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Orden.objects.filter(estado='pagada').count(), 1)
 
+    def test_post_evento_finalizado_409(self):
+        self.evento.estado = 'finalizado'
+        self.evento.save()
+        response = self.client.post(reverse('comprar_pase', args=[self.evento.id]))
+        self.assertEqual(response.status_code, 409)
+
 
 class AccesoMercadoTest(TestCase, _Fixtures):
     def setUp(self):
@@ -161,6 +167,7 @@ class MotorPronosticoTest(TestCase):
         probs = MotorPronostico.calcular_probabilidades('futbol', 'moneyline')
         self.assertAlmostEqual(sum(probs.values()), 1.0)
         self.assertIn('empate', probs)
+        self.assertEqual(MotorPronostico.mas_probable(probs), 'local')
 
 
 class EventoDetalleViewTest(TestCase, _Fixtures):

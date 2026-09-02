@@ -32,7 +32,7 @@
                     {% if item.bloqueado %}
                         <p class="lock">Mercado bloqueado. Compre el pase de este evento o un plan Premium/Pro.</p>
                     {% elif item.prediccion %}
-                        <p class="ok">Mas probable: {{ item.prediccion.mas_probable }} (VE {{ item.prediccion.valor_esperado }})</p>
+                        <p class="ok">Mas probable: {{ item.mas_probable }} (VE {{ item.prediccion.valor_esperado }})</p>
                         <p class="probs muted">{{ item.prediccion.probabilidades }} · {{ item.prediccion.version_modelo }}</p>
                     {% else %}
                         <p class="muted">Sin prediccion vigente.</p>

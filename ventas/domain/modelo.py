@@ -23,3 +23,9 @@ class MotorPronostico:
             return 0.0
         top = max(probabilidades.values())
         return round(top, 4)
+
+    @staticmethod
+    def mas_probable(probabilidades):
+        if not probabilidades:
+            return None
+        return max(probabilidades, key=probabilidades.get)

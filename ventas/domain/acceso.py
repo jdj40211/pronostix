@@ -1,6 +1,7 @@
 from django.utils import timezone
 
-from ..models import LineaOrden, Suscripcion
+from .logic import ReglasPlan
+from ..models import LineaOrden, Prediccion, Suscripcion
 
 
 class AccesoMercado:
@@ -32,4 +33,8 @@ class AccesoMercado:
             fecha_inicio__lte=ahora,
             fecha_fin__gte=ahora,
         ).select_related('plan')
-        return any(sub.plan.incluye_mercado(mercado.tipo) for sub in vigentes)
+        return any(ReglasPlan.incluye_mercado(sub.plan, mercado.tipo) for sub in vigentes)
+
+    @staticmethod
+    def prediccion_vigente(mercado):
+        return Prediccion.objects.filter(mercado=mercado).order_by('-fecha_calculo').first()

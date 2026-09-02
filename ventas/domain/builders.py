@@ -1,4 +1,4 @@
-from .logic import CalculadorImpuestos
+from .logic import CalculadorImpuestos, ReglasEvento, ReglasPlan
 from ..models import LineaOrden, Orden
 
 
@@ -38,12 +38,12 @@ class OrdenBuilder:
             raise ValueError('Datos insuficientes para crear la orden.')
 
         if self._evento:
-            if self._evento.ha_finalizado():
+            if ReglasEvento.ha_finalizado(self._evento):
                 raise ValueError('No se puede comprar un pase de un evento finalizado.')
             if self._evento.precio_pase <= 0:
                 raise ValueError('El evento no tiene un pase de pago.')
 
-        if self._plan and self._plan.es_gratuito():
+        if self._plan and ReglasPlan.es_gratuito(self._plan):
             raise ValueError('El plan gratuito no genera cobro.')
 
     def build(self) -> Orden:
