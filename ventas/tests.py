@@ -175,3 +175,48 @@ class EventoDetalleViewTest(TestCase, _Fixtures):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'moneyline')
         self.assertContains(response, 'bloqueado')
+
+
+class ComprarPaseAPITest(TestCase, _Fixtures):
+    def setUp(self):
+        self.evento = self.crear_evento()
+
+    def test_lista_eventos(self):
+        response = self.client.get(reverse('api_eventos'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+    def test_post_crea_orden_201(self):
+        response = self.client.post(
+            reverse('api_comprar'),
+            {'evento_id': self.evento.id},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Orden.objects.filter(estado='pagada').count(), 1)
+
+    def test_post_sin_evento_id_400(self):
+        response = self.client.post(
+            reverse('api_comprar'),
+            {},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_evento_inexistente_404(self):
+        response = self.client.post(
+            reverse('api_comprar'),
+            {'evento_id': 9999},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_evento_finalizado_409(self):
+        self.evento.estado = 'finalizado'
+        self.evento.save()
+        response = self.client.post(
+            reverse('api_comprar'),
+            {'evento_id': self.evento.id},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 409)

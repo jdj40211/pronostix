@@ -47,6 +47,18 @@ ventas/
   infra/gateways.py     MOCK (consola) y REAL (pasarela propia)
 ```
 
+## API (Entregable 1, avance)
+
+```powershell
+# Listar eventos
+curl http://127.0.0.1:8000/api/v1/eventos/
+
+# Comprar pase (201). Si el evento no existe: 404. Si ya hay pase o esta finalizado: 409.
+curl -X POST http://127.0.0.1:8000/api/v1/comprar/ -H "Content-Type: application/json" -d "{\"evento_id\": 1}"
+```
+
+La vista API solo valida el serializer y llama a `CompraService`. Builder y Factory siguen en dominio/infra.
+
 ## Tests
 
 ```powershell
