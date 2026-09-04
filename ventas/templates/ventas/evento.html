@@ -1,47 +1,96 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <title>{{ evento }} - Pronostix</title>
-    <style>
-        body { font-family: Segoe UI, sans-serif; max-width: 720px; margin: 40px auto; color: #222; }
-        a { color: #0a7; }
-        .muted { color: #666; }
-        .lock { color: #a60; }
-        .ok { color: #0a5; }
-        li { margin-bottom: 16px; }
-        .probs { font-family: Consolas, monospace; }
-    </style>
-</head>
-<body>
-    <p><a href="{% url 'catalogo' %}">Volver al catalogo</a></p>
-    <h1>{{ evento.local }} vs {{ evento.visitante }}</h1>
-    <p class="muted">{{ evento.competicion }} · {{ evento.fase }} · {{ evento.sede }}</p>
-    <p><a href="{% url 'comprar_pase' evento.id %}">Comprar pase premium</a></p>
+{% extends 'ventas/base.html' %}
+
+{% block titulo %}{{ evento.local }} vs {{ evento.visitante }} - Pronostix{% endblock %}
+
+{% block contenido %}
+<main class="pagina evento-relleno-inferior">
+    <a class="volver" href="{% url 'catalogo' %}">Eventos</a>
+
+    <div class="evento-encabezado">
+        <div class="evento-titulo-block">
+            <p class="evento-contexto">{{ evento.competicion }} · {{ evento.fase }} · {{ evento.sede }}</p>
+            <h1 class="evento-titulo">{{ evento.local }}<br>vs {{ evento.visitante }}</h1>
+            <p class="evento-fecha">{{ evento.fecha|date:"j \d\e F \d\e Y · H:i" }}</p>
+        </div>
+
+        {% if evento.estado != 'finalizado' %}
+            <div class="cta">
+                <a class="boton-principal" href="{% url 'comprar_pase' evento.id %}">Comprar pase · ${{ evento.precio_pase|floatformat:"0g" }} + IVA</a>
+            </div>
+        {% endif %}
+    </div>
 
     {% if mercados %}
-        <ul>
+        <ul class="mercados">
             {% for item in mercados %}
-                <li>
-                    <strong>{{ item.mercado.get_tipo_display }}</strong>
-                    {% if item.mercado.es_premium %}
-                        <span class="muted">premium</span>
-                    {% else %}
-                        <span class="muted">free</span>
-                    {% endif %}
+                <li class="mercado">
+                    <div class="mercado__cabecera">
+                        <h2 class="mercado__titulo">{{ item.mercado.get_tipo_display }}</h2>
+                        <span class="mercado__etiqueta">{% if item.mercado.es_premium %}premium{% else %}gratis{% endif %}</span>
+                    </div>
+
                     {% if item.bloqueado %}
-                        <p class="lock">Mercado bloqueado. Compre el pase de este evento o un plan Premium/Pro.</p>
+                        <div class="banda banda--tramada" aria-hidden="true">
+                            <span class="banda__bloque" style="flex-basis: 100%"></span>
+                        </div>
+                        <div class="leyenda">
+                            {% if item.mercado.tipo == 'totales' %}
+                                <div class="leyenda__item" style="flex-basis: 50%">
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">over</span>
+                                    <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
+                                </div>
+                                <div class="leyenda__item" style="flex-basis: 50%">
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">under</span>
+                                    <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
+                                </div>
+                            {% elif item.mercado.tipo == 'handicap' %}
+                                <div class="leyenda__item" style="flex-basis: 50%">
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">local</span>
+                                    <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
+                                </div>
+                                <div class="leyenda__item" style="flex-basis: 50%">
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">visitante</span>
+                                    <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
+                                </div>
+                            {% else %}
+                                <div class="leyenda__item" style="flex-basis: 50%">
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">sí</span>
+                                    <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
+                                </div>
+                                <div class="leyenda__item" style="flex-basis: 50%">
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">no</span>
+                                    <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <p class="mercado__bloqueo">Mercado bloqueado. Se abre con el pase de este evento o con un plan Premium o Pro.</p>
                     {% elif item.prediccion %}
-                        <p class="ok">Mas probable: {{ item.mas_probable }} (VE {{ item.prediccion.valor_esperado }})</p>
-                        <p class="probs muted">{{ item.prediccion.probabilidades }} · {{ item.prediccion.version_modelo }}</p>
+                        <div class="banda" aria-hidden="true">
+                            {% for opcion, p in item.prediccion.probabilidades.items %}
+                                <span class="banda__bloque {% if opcion == item.mas_probable %}banda__bloque--ganador{% else %}banda__bloque--otro{% endif %}" style="flex-basis: {% widthratio p 1 100 %}%"></span>
+                            {% endfor %}
+                        </div>
+                        <div class="leyenda">
+                            {% for opcion, p in item.prediccion.probabilidades.items %}
+                                <div class="leyenda__item" style="flex-basis: {% widthratio p 1 100 %}%">
+                                    <span class="leyenda__nombre">{{ opcion }}</span>
+                                    <span class="leyenda__valor">{% widthratio p 1 100 %} %</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <p class="mercado__resumen">Más probable: <strong>{{ item.mas_probable }}</strong> · valor esperado {{ item.prediccion.valor_esperado }}<br>Modelo {{ item.prediccion.version_modelo }}</p>
                     {% else %}
-                        <p class="muted">Sin prediccion vigente.</p>
+                        <p class="mercado__sin-prediccion">Sin pronóstico vigente.</p>
                     {% endif %}
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p class="muted">Este evento aun no tiene mercados. Ejecute <code>python manage.py seed_pronostix</code>.</p>
+        <p class="vacio">Este evento aún no tiene mercados. Ejecute <code>python manage.py seed_pronostix</code>.</p>
     {% endif %}
-</body>
-</html>
+
+    {% if evento.estado == 'finalizado' %}
+        <p class="evento-nota-cierre">Evento finalizado. Ya no se venden pases.</p>
+    {% endif %}
+</main>
+{% endblock %}

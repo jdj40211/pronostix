@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block titulo %}Pronostix{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght,wdth@400,62..125;700,62..125;800,62..125&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="{% static 'ventas/pronostix.css' %}">
+</head>
+<body>
+    <header class="encabezado">
+        <a class="logo" href="{% url 'catalogo' %}" aria-label="Pronostix, ir a la portada">
+            <span class="logo-texto">Pronostix</span>
+            <span class="logo-banda" aria-hidden="true">
+                <span class="logo-banda__local"></span>
+                <span class="logo-banda__empate"></span>
+                <span class="logo-banda__visitante"></span>
+            </span>
+        </a>
+    </header>
+
+    {% block contenido %}{% endblock %}
+
+    <footer class="pie">
+        Pronostix es análisis de entretenimiento. Muestra probabilidades; no recibe apuestas.
+    </footer>
+</body>
+</html>

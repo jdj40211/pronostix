@@ -1,33 +1,40 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <title>Pronostix - Eventos</title>
-    <style>
-        body { font-family: Segoe UI, sans-serif; max-width: 760px; margin: 40px auto; color: #222; }
-        a { color: #0a7; }
-        li { margin-bottom: 14px; }
-        .muted { color: #666; }
-    </style>
-</head>
-<body>
-    <h1>Pronostix</h1>
-    <p class="muted">Proyecciones estadisticas. El moneyline es free; totales y handicap se desbloquean con pase o plan.</p>
+{% extends 'ventas/base.html' %}
+
+{% block titulo %}Pronostix - Eventos{% endblock %}
+
+{% block contenido %}
+<main class="pagina pagina--ancha">
+    <h1 class="intro-titulo">Pronósticos por evento</h1>
+    <p class="intro-texto">El resultado es gratis; totales y hándicap se abren con el pase del evento o con un plan.</p>
+
     {% if eventos %}
-        <ul>
+        <ul class="lista-eventos">
             {% for evento in eventos %}
-                <li>
-                    <strong>{{ evento.local }} vs {{ evento.visitante }}</strong>
-                    — {{ evento.competicion.nombre }}
-                    — ${{ evento.precio_pase }}
-                    — <a href="{% url 'evento_detalle' evento.id %}">Ver mercados</a>
-                    — <a href="{% url 'comprar_pase' evento.id %}">Comprar pase</a>
-                    <br><span class="muted">{{ evento.fecha }} · {{ evento.fase }} · {{ evento.sede }}</span>
+                <li class="fila-evento">
+                    <div class="fila-evento__contexto">{{ evento.competicion.nombre }} · {{ evento.fase }}</div>
+                    <div>
+                        {% if evento.estado == 'en_vivo' %}
+                            <span class="fila-evento__estado">En vivo</span>
+                        {% endif %}
+                        <a class="fila-evento__partido" href="{% url 'evento_detalle' evento.id %}">{{ evento.local }}<br>vs {{ evento.visitante }}</a>
+                    </div>
+                    <div class="fila-evento__meta">{{ evento.fecha|date:"j \d\e F · H:i" }} · {{ evento.sede }}</div>
+                    <div class="fila-evento__pie">
+                        <span class="fila-evento__precio">${{ evento.precio_pase|floatformat:"0g" }}</span>
+                        <span class="fila-evento__acciones">
+                            <a class="enlace-secundario" href="{% url 'evento_detalle' evento.id %}">Ver mercados</a>
+                            {% if evento.estado == 'finalizado' %}
+                                <span class="fila-evento__estado fila-evento__estado--finalizado">Finalizado</span>
+                            {% else %}
+                                <a class="enlace-compra" href="{% url 'comprar_pase' evento.id %}">Comprar pase</a>
+                            {% endif %}
+                        </span>
+                    </div>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>No hay eventos. Ejecute: <code>python manage.py seed_pronostix</code></p>
+        <p class="vacio">No hay eventos. Ejecute: <code>python manage.py seed_pronostix</code></p>
     {% endif %}
-</body>
-</html>
+</main>
+{% endblock %}

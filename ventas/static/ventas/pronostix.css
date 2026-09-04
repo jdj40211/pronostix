@@ -1,0 +1,573 @@
+/* Pronostix — sistema de diseño
+   Un parte de pronóstico, no un tablero de apuestas.
+   Ver Wiki: dirección visual del 4 de septiembre de 2026. */
+
+:root {
+  /* color */
+  --papel:           #F2F4F6;
+  --superficie:      #FFFFFF;
+  --tinta:           #1B2028;
+  --pizarra:         #4C5866;
+  --pizarra-oscura:  #5F6B7A;
+  --ambar:           #D9822B;
+  --ambar-tinta:     #9A5410;
+  --grafito:         #39424D;
+  --neblina:         #B9C2CC;
+  --regla:           #D6DCE3;
+  --ladrillo:        #8C2F24;
+  --ladrillo-tinte:  #F7E9E6;
+
+  /* tipografía */
+  --f-titular: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-texto:   "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+
+  /* espaciado */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 24px;
+  --e-6: 32px;
+  --e-7: 48px;
+  --e-8: 64px;
+
+  /* anchos */
+  --ancho-lectura: 720px;
+  --ancho-tabla: 960px;
+  --ancho-compra: 560px;
+
+  /* radios */
+  --r-boton: 4px;
+  --r-mensaje: 6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+ul { list-style: none; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--f-texto);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+h1, h2, h3 { margin: 0; font-family: var(--f-titular); text-wrap: balance; }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, .boton {
+  font-family: var(--f-texto);
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--tinta);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* ---------- estructura de página ---------- */
+
+.pagina {
+  max-width: var(--ancho-lectura);
+  margin: 0 auto;
+  padding: var(--e-5) 20px var(--e-7);
+}
+
+.pagina--ancha { max-width: var(--ancho-tabla); }
+.pagina--compra { max-width: var(--ancho-compra); }
+
+/* ---------- encabezado / logotipo ---------- */
+
+.encabezado {
+  padding: var(--e-5) 20px 0;
+  max-width: var(--ancho-tabla);
+  margin: 0 auto;
+}
+
+.logo {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--e-1);
+  width: max-content;
+}
+
+.logo-texto {
+  font-family: var(--f-titular);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--tinta);
+}
+
+.logo-banda {
+  display: flex;
+  gap: 2px;
+  width: 36px;
+  height: 4px;
+}
+
+.logo-banda span { display: block; height: 100%; }
+.logo-banda__local     { flex-basis: 42%; background: var(--ambar); }
+.logo-banda__empate    { flex-basis: 30%; background: var(--grafito); }
+.logo-banda__visitante { flex-basis: 28%; background: var(--grafito); }
+
+/* ---------- pie ---------- */
+
+footer.pie {
+  max-width: var(--ancho-tabla);
+  margin: var(--e-7) auto 0;
+  padding: 0 20px var(--e-6);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pizarra);
+}
+
+/* ---------- portada ---------- */
+
+.intro-titulo {
+  font-family: var(--f-titular);
+  font-stretch: 100%;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.25;
+  margin-bottom: var(--e-2);
+}
+
+.intro-texto {
+  color: var(--pizarra);
+  margin-bottom: var(--e-6);
+}
+
+.lista-eventos {
+  border-top: 1px solid var(--regla);
+}
+
+.fila-evento {
+  border-bottom: 1px solid var(--regla);
+  padding: var(--e-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+}
+
+.fila-evento__contexto {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pizarra);
+}
+
+.fila-evento__estado {
+  font-family: var(--f-texto);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ambar-tinta);
+}
+
+.fila-evento__estado--finalizado { color: var(--pizarra); font-weight: 400; }
+
+.fila-evento__partido {
+  display: block;
+  font-family: var(--f-titular);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--tinta);
+}
+
+.fila-evento__partido:hover,
+.fila-evento__partido:focus-visible { text-decoration: underline; }
+
+.fila-evento__meta {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pizarra);
+}
+
+.fila-evento__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e-4);
+  margin-top: var(--e-1);
+}
+
+.fila-evento__precio {
+  font-family: var(--f-titular);
+  font-stretch: 100%;
+  font-weight: 600;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fila-evento__acciones { display: flex; gap: var(--e-4); }
+
+.enlace-secundario {
+  color: var(--tinta);
+  text-decoration: underline;
+  text-decoration-color: var(--regla);
+  padding: var(--e-1) 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.enlace-secundario:hover,
+.enlace-secundario:focus-visible { text-decoration-color: currentColor; }
+
+.enlace-compra {
+  color: var(--ambar-tinta);
+  font-weight: 500;
+  padding: var(--e-1) 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.enlace-compra:hover,
+.enlace-compra:focus-visible { text-decoration: underline; }
+
+.vacio {
+  color: var(--pizarra);
+  padding: var(--e-6) 0;
+}
+
+.vacio code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--superficie);
+  border: 1px solid var(--regla);
+  padding: 2px 6px;
+  border-radius: 0;
+}
+
+@media (min-width: 768px) {
+  .lista-eventos { border-top: none; }
+
+  .fila-evento {
+    display: grid;
+    grid-template-columns: 160px 1fr 200px 110px auto;
+    align-items: center;
+    gap: var(--e-4);
+    padding: var(--e-4) 0;
+  }
+
+  .fila-evento__partido { font-size: 28px; }
+  .fila-evento__pie { display: contents; }
+  .fila-evento__acciones { gap: var(--e-3); }
+}
+
+/* ---------- detalle del evento ---------- */
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--pizarra);
+  text-decoration: underline;
+  text-decoration-color: var(--regla);
+  margin-bottom: var(--e-4);
+}
+
+.volver:hover, .volver:focus-visible { text-decoration-color: currentColor; }
+
+.evento-contexto {
+  font-size: 13px;
+  color: var(--pizarra);
+  margin-bottom: var(--e-2);
+}
+
+.evento-titulo {
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.05;
+  margin-bottom: var(--e-2);
+}
+
+.evento-fecha {
+  font-size: 13px;
+  color: var(--pizarra);
+  margin-bottom: var(--e-6);
+}
+
+.evento-nota-cierre {
+  color: var(--pizarra);
+  font-size: 15px;
+}
+
+.evento-titulo-block { min-width: 0; }
+
+@media (min-width: 768px) {
+  .evento-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--e-6);
+  }
+
+  .evento-titulo { font-size: 44px; }
+  .evento-titulo-block { flex: 1; }
+}
+
+/* mercados */
+
+.mercados { display: flex; flex-direction: column; }
+
+.mercado { padding: var(--e-6) 0; }
+.mercado:first-child { padding-top: 0; }
+
+.mercado__cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  margin-bottom: var(--e-3);
+}
+
+.mercado__titulo {
+  font-stretch: 100%;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.mercado__etiqueta {
+  font-size: 13px;
+  color: var(--pizarra);
+}
+
+.mercado__sin-prediccion {
+  color: var(--pizarra);
+  font-size: 15px;
+}
+
+@media (min-width: 768px) {
+  .mercado__titulo { font-size: 20px; }
+  .mercado { padding: var(--e-7) 0; }
+}
+
+/* la banda de pronóstico */
+
+.banda {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  margin-bottom: var(--e-2);
+}
+
+.banda__bloque { display: block; height: 100%; }
+.banda__bloque--ganador { background: var(--ambar); }
+.banda__bloque--otro { background: var(--grafito); }
+
+@media (min-width: 768px) {
+  .banda { height: 14px; }
+}
+
+.leyenda {
+  display: flex;
+  gap: 2px;
+  margin-bottom: var(--e-3);
+}
+
+.leyenda__item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.leyenda__nombre {
+  font-size: 13px;
+  color: var(--pizarra);
+  overflow-wrap: break-word;
+}
+
+.leyenda__valor {
+  font-family: var(--f-titular);
+  font-stretch: 100%;
+  font-weight: 600;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+}
+
+.mercado__resumen {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pizarra);
+}
+
+.mercado__resumen strong {
+  font-weight: 500;
+  color: var(--ambar-tinta);
+}
+
+/* banda con trama, mercado bloqueado */
+
+.banda--tramada {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--neblina) 0,
+    var(--neblina) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+}
+
+.leyenda__valor--oculto { color: var(--pizarra-oscura); }
+.leyenda__nombre--oculto { color: var(--pizarra-oscura); }
+
+.mercado__bloqueo {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pizarra-oscura);
+}
+
+/* botón principal */
+
+.boton-principal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  width: 100%;
+  background: var(--ambar);
+  color: var(--tinta);
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  border-radius: var(--r-boton);
+  padding: 0 var(--e-4);
+  transition: background-color 120ms ease;
+}
+
+.boton-principal:hover,
+.boton-principal:focus-visible {
+  background: color-mix(in srgb, var(--ambar) 92%, var(--tinta) 8%);
+}
+
+.cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--e-3) 20px calc(var(--e-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--papel);
+  border-top: 1px solid var(--regla);
+}
+
+.evento-relleno-inferior { padding-bottom: 88px; }
+
+@media (min-width: 768px) {
+  .cta {
+    position: static;
+    padding: 0;
+    background: none;
+    border-top: none;
+    flex: none;
+    width: max-content;
+  }
+
+  .cta .boton-principal { width: auto; }
+
+  .evento-relleno-inferior { padding-bottom: 0; }
+}
+
+/* ---------- compra ---------- */
+
+.compra-titulo { font-size: 32px; font-stretch: 75%; font-weight: 700; line-height: 1.05; margin-bottom: var(--e-2); }
+.compra-intro { color: var(--pizarra); margin-bottom: var(--e-6); }
+
+.panel {
+  background: var(--superficie);
+  border: 1px solid var(--regla);
+  border-radius: 0;
+  padding: var(--e-4);
+  margin-bottom: var(--e-5);
+}
+
+.panel__fila {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e-4);
+  padding: var(--e-3) 0;
+  border-bottom: 1px solid var(--regla);
+}
+
+.panel__fila:last-child { border-bottom: none; padding-bottom: 0; }
+.panel__fila:first-child { padding-top: 0; }
+
+.panel__etiqueta { color: var(--pizarra); font-size: 15px; }
+
+.panel__valor {
+  font-family: var(--f-titular);
+  font-stretch: 100%;
+  font-weight: 600;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.panel__valor--grande {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.panel__valor--mono {
+  font-family: var(--f-titular);
+}
+
+.nota-pasarela {
+  font-size: 13px;
+  color: var(--pizarra);
+  margin-top: var(--e-3);
+}
+
+.nota-pasarela code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--papel);
+  border: 1px solid var(--regla);
+  padding: 1px 5px;
+  border-radius: 0;
+}
+
+.exito-titulo {
+  font-stretch: 100%;
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: var(--e-4);
+}
+
+.exito-acciones {
+  display: flex;
+  gap: var(--e-4);
+  flex-wrap: wrap;
+}
+
+.mensaje-error {
+  border-left: 3px solid var(--ladrillo);
+  background: var(--ladrillo-tinte);
+  color: var(--ladrillo);
+  border-radius: var(--r-mensaje);
+  padding: var(--e-3) var(--e-4);
+  margin-bottom: var(--e-4);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  .compra-titulo { font-size: 44px; }
+}
