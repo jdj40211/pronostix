@@ -13,7 +13,9 @@
             <p class="evento-fecha">{{ evento.fecha|date:"j \d\e F \d\e Y · H:i" }}</p>
         </div>
 
-        {% if evento.estado != 'finalizado' %}
+        {% if tiene_pase %}
+            <p class="sello-pase sello-pase--grande">Pase activo · todos los mercados abiertos</p>
+        {% elif evento.estado != 'finalizado' %}
             <div class="cta">
                 <a class="boton-principal" href="{% url 'comprar_pase' evento.id %}">Comprar pase · ${{ evento.precio_pase|floatformat:"0g" }} + IVA</a>
             </div>
@@ -45,11 +47,11 @@
                                 </div>
                             {% elif item.mercado.tipo == 'handicap' %}
                                 <div class="leyenda__item" style="flex-basis: 50%">
-                                    <span class="leyenda__nombre leyenda__nombre--oculto">local</span>
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">{{ evento.local }}</span>
                                     <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
                                 </div>
                                 <div class="leyenda__item" style="flex-basis: 50%">
-                                    <span class="leyenda__nombre leyenda__nombre--oculto">visitante</span>
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">{{ evento.visitante }}</span>
                                     <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
                                 </div>
                             {% else %}
@@ -73,12 +75,12 @@
                         <div class="leyenda">
                             {% for opcion, p in item.prediccion.probabilidades.items %}
                                 <div class="leyenda__item" style="flex-basis: {% widthratio p 1 100 %}%">
-                                    <span class="leyenda__nombre">{{ opcion }}</span>
+                                    <span class="leyenda__nombre">{% if opcion == 'local' %}{{ evento.local }}{% elif opcion == 'visitante' %}{{ evento.visitante }}{% else %}{{ opcion }}{% endif %}</span>
                                     <span class="leyenda__valor">{% widthratio p 1 100 %} %</span>
                                 </div>
                             {% endfor %}
                         </div>
-                        <p class="mercado__resumen">Más probable: <strong>{{ item.mas_probable }}</strong> · valor esperado {{ item.prediccion.valor_esperado }}<br>Modelo {{ item.prediccion.version_modelo }}</p>
+                        <p class="mercado__resumen">Más probable: <strong>{% if item.mas_probable == 'local' %}{{ evento.local }}{% elif item.mas_probable == 'visitante' %}{{ evento.visitante }}{% else %}{{ item.mas_probable }}{% endif %}</strong> · valor esperado {{ item.prediccion.valor_esperado }}<br>Modelo {{ item.prediccion.version_modelo }}</p>
                     {% else %}
                         <p class="mercado__sin-prediccion">Sin pronóstico vigente.</p>
                     {% endif %}

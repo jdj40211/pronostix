@@ -240,6 +240,28 @@ footer.pie {
 .enlace-compra:hover,
 .enlace-compra:focus-visible { text-decoration: underline; }
 
+.sello-pase {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--grafito);
+}
+
+.sello-pase::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--ambar);
+}
+
+.sello-pase--grande {
+  font-size: 15px;
+  margin: 0 0 var(--e-2);
+}
+
 .vacio {
   color: var(--pizarra);
   padding: var(--e-6) 0;

@@ -23,7 +23,9 @@
                         <span class="fila-evento__precio">${{ evento.precio_pase|floatformat:"0g" }}</span>
                         <span class="fila-evento__acciones">
                             <a class="enlace-secundario" href="{% url 'evento_detalle' evento.id %}">Ver mercados</a>
-                            {% if evento.estado == 'finalizado' %}
+                            {% if evento.id in eventos_con_pase %}
+                                <span class="sello-pase">Pase activo</span>
+                            {% elif evento.estado == 'finalizado' %}
                                 <span class="fila-evento__estado fila-evento__estado--finalizado">Finalizado</span>
                             {% else %}
                                 <a class="enlace-compra" href="{% url 'comprar_pase' evento.id %}">Comprar pase</a>

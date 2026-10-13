@@ -31,6 +31,14 @@
             <a class="enlace-compra" href="{% url 'evento_detalle' evento.id %}">Ver mercados desbloqueados</a>
             <a class="enlace-secundario" href="{% url 'catalogo' %}">Otro evento</a>
         </p>
+    {% elif tiene_pase %}
+        <h1 class="compra-titulo">Pase premium</h1>
+        <p class="sello-pase sello-pase--grande">Ya tienes el pase de este evento</p>
+        <p class="compra-intro">Totales y hándicap de {{ evento.local }} vs {{ evento.visitante }} ya están abiertos. No hace falta volver a pagar.</p>
+        <p class="exito-acciones">
+            <a class="enlace-compra" href="{% url 'evento_detalle' evento.id %}">Ver mercados</a>
+            <a class="enlace-secundario" href="{% url 'catalogo' %}">Otro evento</a>
+        </p>
     {% else %}
         <h1 class="compra-titulo">Pase premium</h1>
         <p class="compra-intro">Abre totales y hándicap de este evento.</p>
@@ -45,8 +53,12 @@
                 <span class="panel__valor">${{ evento.precio_pase|floatformat:"0g" }}</span>
             </div>
             <div class="panel__fila">
-                <span class="panel__etiqueta">IVA</span>
-                <span class="panel__valor">19 %, se liquida en la orden</span>
+                <span class="panel__etiqueta">IVA 19 %</span>
+                <span class="panel__valor">${{ iva|floatformat:"0g" }}</span>
+            </div>
+            <div class="panel__fila">
+                <span class="panel__etiqueta">Total a pagar</span>
+                <span class="panel__valor panel__valor--grande">${{ total|floatformat:"0g" }}</span>
             </div>
         </div>
 
@@ -56,7 +68,7 @@
 
         <form method="post">
             {% csrf_token %}
-            <button type="submit" class="boton-principal">Pagar con la pasarela propia</button>
+            <button type="submit" class="boton-principal">Pagar ${{ total|floatformat:"0g" }} con la pasarela propia</button>
         </form>
         <p class="nota-pasarela">La pasarela la decide <code>PasarelaFactory</code> según <code>ENV_TYPE</code>.</p>
     {% endif %}
