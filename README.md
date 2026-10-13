@@ -61,10 +61,35 @@ curl -X POST http://127.0.0.1:8000/api/v1/comprar/ -H "Content-Type: application
 
 La vista API solo valida el serializer y llama a `CompraService`. Builder y Factory siguen en dominio/infra.
 
+## Taller 02: Strangler Pattern (Django + Flask + Nginx)
+
+El motor de pronosticos se extrajo del monolito a `microservicio_pronosticos/` (Flask). Nginx es la unica entrada: `/api/v1/` y las vistas HTML van a Django; `/api/v2/pronosticos/` va a Flask. Justificacion y matriz de decision: Wiki **[Migración a Microservicios (Strangler Pattern)](https://github.com/jdj40211/pronostix/wiki/Migraci%C3%B3n-a-Microservicios-(Strangler-Pattern))**.
+
+```powershell
+docker compose up -d --build
+docker compose ps
+
+# Django (v1)
+curl http://localhost/api/v1/eventos/
+
+# Flask (v2)
+curl -X POST http://localhost/api/v2/pronosticos/ -H "Content-Type: application/json" -d "{\"deporte\": \"futbol\", \"mercados\": [\"moneyline\", \"totales\"], \"ranking_local\": 3, \"ranking_visitante\": 12}"
+```
+
+Si el puerto 80 esta ocupado: `$env:NGINX_PORT=8080; docker compose up -d`.
+
+```
+docker-compose.yml          db (PostgreSQL) + web_django + pronosticos_flask + nginx
+Dockerfile                  Imagen del monolito (Gunicorn)
+nginx/nginx.conf            Bifurcacion del trafico por URL
+microservicio_pronosticos/  app.py (API), motor.py (logica), Dockerfile propio
+```
+
 ## Tests
 
 ```powershell
 python manage.py test
+cd microservicio_pronosticos; python -m unittest -v
 ```
 
 ## Contenido de dominio
