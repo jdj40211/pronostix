@@ -125,6 +125,47 @@ class ComprarPaseViewTest(TestCase, _Fixtures):
         response = self.client.post(reverse('comprar_pase', args=[self.evento.id]))
         self.assertEqual(response.status_code, 409)
 
+    def test_get_muestra_iva_y_total_antes_de_pagar(self):
+        response = self.client.get(reverse('comprar_pase', args=[self.evento.id]))
+        self.assertContains(response, '$2.280')
+        self.assertContains(response, '$14.280')
+
+    def test_con_pase_no_ofrece_pagar_otra_vez(self):
+        self.client.post(reverse('comprar_pase', args=[self.evento.id]))
+        response = self.client.get(reverse('comprar_pase', args=[self.evento.id]))
+        self.assertContains(response, 'Ya tienes el pase')
+        self.assertNotContains(response, '<form')
+
+    def test_evento_inexistente_404_con_diseno_propio(self):
+        response = self.client.get(reverse('comprar_pase', args=[9999]))
+        self.assertEqual(response.status_code, 404)
+
+
+class PaseActivoEnPantallasTest(TestCase, _Fixtures):
+    def setUp(self):
+        self.evento = self.crear_evento()
+        Mercado.objects.create(evento=self.evento, tipo='moneyline', es_premium=False)
+        PrediccionService().generar_para(self.evento)
+
+    def test_sin_pase_ofrece_comprar(self):
+        catalogo = self.client.get(reverse('catalogo'))
+        detalle = self.client.get(reverse('evento_detalle', args=[self.evento.id]))
+        self.assertContains(catalogo, 'Comprar pase')
+        self.assertNotContains(catalogo, 'Pase activo')
+        self.assertContains(detalle, 'Comprar pase ·')
+
+    def test_con_pase_muestra_pase_activo(self):
+        self.client.post(reverse('comprar_pase', args=[self.evento.id]))
+        catalogo = self.client.get(reverse('catalogo'))
+        detalle = self.client.get(reverse('evento_detalle', args=[self.evento.id]))
+        self.assertContains(catalogo, 'Pase activo')
+        self.assertContains(detalle, 'Pase activo')
+        self.assertNotContains(detalle, 'Comprar pase ·')
+
+    def test_probabilidades_con_nombre_de_equipo(self):
+        detalle = self.client.get(reverse('evento_detalle', args=[self.evento.id]))
+        self.assertContains(detalle, '<span class="leyenda__nombre">Nacional</span>', html=False)
+
 
 class AccesoMercadoTest(TestCase, _Fixtures):
     def setUp(self):
