@@ -9,9 +9,7 @@ from .services import CatalogoService, CompraService, PrediccionService
 
 class CatalogoView(View):
     def get(self, request):
-        return render(request, 'ventas/catalogo.html', {
-            'eventos': CatalogoService().listar(),
-        })
+        return render(request, 'ventas/catalogo.html', CatalogoService().portada(request))
 
 
 class ComprarPaseView(View):
@@ -22,7 +20,7 @@ class ComprarPaseView(View):
 
     def get(self, request, evento_id):
         try:
-            ctx = self.setup_service().preparar(evento_id)
+            ctx = self.setup_service().preparar(request, evento_id)
         except EventoNoEncontrado as exc:
             raise Http404(str(exc)) from exc
         return render(request, self.template_name, ctx)

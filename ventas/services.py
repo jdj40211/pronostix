@@ -3,8 +3,9 @@ from django.contrib.auth import get_user_model
 from .domain.acceso import AccesoMercado
 from .domain.builders import OrdenBuilder
 from .domain.exceptions import ConflictoNegocio, EventoNoEncontrado
+from .domain.logic import CalculadorImpuestos
 from .domain.modelo import MotorPronostico
-from .models import Evento, LineaOrden, ModeloPredictivo, Prediccion, Transaccion
+from .models import Evento, ModeloPredictivo, Prediccion, Transaccion
 
 
 def usuario_de(request):
@@ -23,8 +24,15 @@ class CompraService:
         self.pasarela = pasarela
         self.builder = OrdenBuilder()
 
-    def preparar(self, evento_id):
-        return {'evento': self._evento(evento_id)}
+    def preparar(self, request, evento_id):
+        evento = self._evento(evento_id)
+        total = CalculadorImpuestos.obtener_total_con_iva(evento.precio_pase)
+        return {
+            'evento': evento,
+            'iva': total - evento.precio_pase,
+            'total': total,
+            'tiene_pase': AccesoMercado.tiene_pase(usuario_de(request), evento),
+        }
 
     def _evento(self, evento_id):
         try:
@@ -36,13 +44,7 @@ class CompraService:
         evento = self._evento(evento_id)
 
         usuario = usuario_de(request)
-        ya_pagado = LineaOrden.objects.filter(
-            evento=evento,
-            concepto='pase',
-            orden__usuario=usuario,
-            orden__estado='pagada',
-        ).exists()
-        if ya_pagado:
+        if AccesoMercado.tiene_pase(usuario, evento):
             raise ConflictoNegocio('Ya existe un pase pagado para este evento.')
 
         try:
@@ -67,8 +69,7 @@ class CompraService:
         return {'orden': orden, 'transaccion': transaccion, 'evento': evento}
 
     def crear(self, request, evento_id):
-        evento = self._evento(evento_id)
-        contexto = {'evento': evento}
+        contexto = self.preparar(request, evento_id)
         try:
             resultado = self.crear_api(request, evento_id)
             contexto['orden'] = resultado['orden']
@@ -89,6 +90,12 @@ class CatalogoService:
     def listar(self):
         return Evento.objects.select_related('local', 'visitante', 'competicion')
 
+    def portada(self, request):
+        return {
+            'eventos': self.listar(),
+            'eventos_con_pase': AccesoMercado.eventos_con_pase(usuario_de(request)),
+        }
+
 
 class PrediccionService:
     def detalle(self, request, evento_id):
@@ -107,7 +114,11 @@ class PrediccionService:
                 'mas_probable': MotorPronostico.mas_probable(prediccion.probabilidades) if prediccion else None,
                 'bloqueado': not visible,
             })
-        return {'evento': evento, 'mercados': mercados}
+        return {
+            'evento': evento,
+            'mercados': mercados,
+            'tiene_pase': AccesoMercado.tiene_pase(usuario, evento),
+        }
 
     def generar_para(self, evento):
         deporte = evento.competicion.deporte

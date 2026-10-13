@@ -11,19 +11,33 @@ class AccesoMercado:
     """
 
     @staticmethod
-    def puede_ver(usuario, mercado):
+    def _pases_pagados(usuario):
+        return LineaOrden.objects.filter(
+            concepto='pase',
+            orden__usuario=usuario,
+            orden__estado='pagada',
+        )
+
+    @classmethod
+    def tiene_pase(cls, usuario, evento):
+        if usuario is None:
+            return False
+        return cls._pases_pagados(usuario).filter(evento=evento).exists()
+
+    @classmethod
+    def eventos_con_pase(cls, usuario):
+        if usuario is None:
+            return set()
+        return set(cls._pases_pagados(usuario).values_list('evento_id', flat=True))
+
+    @classmethod
+    def puede_ver(cls, usuario, mercado):
         if not mercado.es_premium:
             return True
         if usuario is None:
             return False
 
-        tiene_pase = LineaOrden.objects.filter(
-            evento=mercado.evento,
-            concepto='pase',
-            orden__usuario=usuario,
-            orden__estado='pagada',
-        ).exists()
-        if tiene_pase:
+        if cls.tiene_pase(usuario, mercado.evento):
             return True
 
         ahora = timezone.now()
