@@ -1,0 +1,16 @@
+.git
+.gitignore
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+db.sqlite3
+db.sqlite3-journal
+*.log
+staticfiles/
+media/
+.env
+microservicio_pronosticos/
+nginx/
+docker-compose.yml
