@@ -1,11 +1,12 @@
 {% extends 'ventas/base.html' %}
+{% load i18n %}
 
-{% block titulo %}Pronostix - Eventos{% endblock %}
+{% block titulo %}{% trans "Pronostix - Eventos" %}{% endblock %}
 
 {% block contenido %}
 <main class="pagina pagina--ancha">
-    <h1 class="intro-titulo">Pronósticos por evento</h1>
-    <p class="intro-texto">El resultado es gratis; totales y hándicap se abren con el pase del evento o con un plan.</p>
+    <h1 class="intro-titulo">{% trans "Pronósticos por evento" %}</h1>
+    <p class="intro-texto">{% trans "El resultado es gratis; totales y hándicap se abren con el pase del evento o con un plan." %}</p>
 
     {% if eventos %}
         <ul class="lista-eventos">
@@ -14,7 +15,7 @@
                     <div class="fila-evento__contexto">{{ evento.competicion.nombre }} · {{ evento.fase }}</div>
                     <div>
                         {% if evento.estado == 'en_vivo' %}
-                            <span class="fila-evento__estado">En vivo</span>
+                            <span class="fila-evento__estado">{% trans "En vivo" %}</span>
                         {% endif %}
                         <a class="fila-evento__partido" href="{% url 'evento_detalle' evento.id %}">{{ evento.local }}<br>vs {{ evento.visitante }}</a>
                     </div>
@@ -22,13 +23,13 @@
                     <div class="fila-evento__pie">
                         <span class="fila-evento__precio">${{ evento.precio_pase|floatformat:"0g" }}</span>
                         <span class="fila-evento__acciones">
-                            <a class="enlace-secundario" href="{% url 'evento_detalle' evento.id %}">Ver mercados</a>
+                            <a class="enlace-secundario" href="{% url 'evento_detalle' evento.id %}">{% trans "Ver mercados" %}</a>
                             {% if evento.id in eventos_con_pase %}
-                                <span class="sello-pase">Pase activo</span>
+                                <span class="sello-pase">{% trans "Pase activo" %}</span>
                             {% elif evento.estado == 'finalizado' %}
-                                <span class="fila-evento__estado fila-evento__estado--finalizado">Finalizado</span>
+                                <span class="fila-evento__estado fila-evento__estado--finalizado">{% trans "Finalizado" %}</span>
                             {% else %}
-                                <a class="enlace-compra" href="{% url 'comprar_pase' evento.id %}">Comprar pase</a>
+                                <a class="enlace-compra" href="{% url 'comprar_pase' evento.id %}">{% trans "Comprar pase" %}</a>
                             {% endif %}
                         </span>
                     </div>
@@ -36,7 +37,35 @@
             {% endfor %}
         </ul>
     {% else %}
-        <p class="vacio">No hay eventos. Ejecute: <code>python manage.py seed_pronostix</code></p>
+        <p class="vacio">{% blocktrans %}No hay eventos. Ejecute: <code>python manage.py seed_pronostix</code>{% endblocktrans %}</p>
+    {% endif %}
+
+    {% if aliado %}
+        <section class="bloque-aliado" aria-labelledby="titulo-aliado">
+            <h2 id="titulo-aliado" class="bloque-aliado__titulo">{% trans "Datos del equipo aliado" %}</h2>
+            <p class="bloque-aliado__proyecto">{{ aliado.proyecto }}</p>
+            {% if aliado.disponible %}
+                <p class="bloque-aliado__estado bloque-aliado__estado--ok">{% trans "Conectado" %}</p>
+            {% else %}
+                <p class="bloque-aliado__estado">{% trans "Modo respaldo" %}</p>
+            {% endif %}
+            {% if aliado.mensaje %}
+                <p class="bloque-aliado__mensaje">{{ aliado.mensaje }}</p>
+            {% endif %}
+            {% if aliado.items %}
+                <ul class="bloque-aliado__lista">
+                    {% for item in aliado.items %}
+                        <li>{{ item.titulo }} · {{ item.estado }}</li>
+                    {% endfor %}
+                </ul>
+            {% elif aliado.eventos %}
+                <ul class="bloque-aliado__lista">
+                    {% for item in aliado.eventos|slice:":3" %}
+                        <li>{{ item.local }} vs {{ item.visitante }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
     {% endif %}
 </main>
 {% endblock %}

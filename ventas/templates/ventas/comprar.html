@@ -1,76 +1,77 @@
 {% extends 'ventas/base.html' %}
+{% load i18n %}
 
-{% block titulo %}Comprar pase - {{ evento }}{% endblock %}
+{% block titulo %}{% trans "Comprar pase" %} - {{ evento }}{% endblock %}
 
 {% block contenido %}
 <main class="pagina pagina--compra">
     <a class="volver" href="{% url 'evento_detalle' evento.id %}">{{ evento.local }} vs {{ evento.visitante }}</a>
 
     {% if mensaje_exito %}
-        <h1 class="compra-titulo">Pase premium</h1>
-        <h2 class="exito-titulo">Pago aprobado</h2>
+        <h1 class="compra-titulo">{% trans "Pase premium" %}</h1>
+        <h2 class="exito-titulo">{% trans "Pago aprobado" %}</h2>
         <div class="panel">
             <div class="panel__fila">
-                <span class="panel__etiqueta">Orden</span>
+                <span class="panel__etiqueta">{% trans "Orden" %}</span>
                 <span class="panel__valor">{{ orden.id }}</span>
             </div>
             <div class="panel__fila">
-                <span class="panel__etiqueta">Total</span>
+                <span class="panel__etiqueta">{% trans "Total" %}</span>
                 <span class="panel__valor panel__valor--grande">${{ orden.total|floatformat:"0g" }}</span>
             </div>
             <div class="panel__fila">
-                <span class="panel__etiqueta">Referencia</span>
+                <span class="panel__etiqueta">{% trans "Referencia" %}</span>
                 <span class="panel__valor panel__valor--mono">{{ transaccion.referencia }}</span>
             </div>
             <div class="panel__fila">
-                <span class="panel__etiqueta">Estado</span>
+                <span class="panel__etiqueta">{% trans "Estado" %}</span>
                 <span class="panel__valor">{{ orden.estado }}</span>
             </div>
         </div>
         <p class="exito-acciones">
-            <a class="enlace-compra" href="{% url 'evento_detalle' evento.id %}">Ver mercados desbloqueados</a>
-            <a class="enlace-secundario" href="{% url 'catalogo' %}">Otro evento</a>
+            <a class="enlace-compra" href="{% url 'evento_detalle' evento.id %}">{% trans "Ver mercados desbloqueados" %}</a>
+            <a class="enlace-secundario" href="{% url 'catalogo' %}">{% trans "Otro evento" %}</a>
         </p>
     {% elif tiene_pase %}
-        <h1 class="compra-titulo">Pase premium</h1>
-        <p class="sello-pase sello-pase--grande">Ya tienes el pase de este evento</p>
-        <p class="compra-intro">Totales y hándicap de {{ evento.local }} vs {{ evento.visitante }} ya están abiertos. No hace falta volver a pagar.</p>
+        <h1 class="compra-titulo">{% trans "Pase premium" %}</h1>
+        <p class="sello-pase sello-pase--grande">{% trans "Ya tienes el pase de este evento" %}</p>
+        <p class="compra-intro">{% blocktrans with local=evento.local visitante=evento.visitante %}Totales y hándicap de {{ local }} vs {{ visitante }} ya están abiertos. No hace falta volver a pagar.{% endblocktrans %}</p>
         <p class="exito-acciones">
-            <a class="enlace-compra" href="{% url 'evento_detalle' evento.id %}">Ver mercados</a>
-            <a class="enlace-secundario" href="{% url 'catalogo' %}">Otro evento</a>
+            <a class="enlace-compra" href="{% url 'evento_detalle' evento.id %}">{% trans "Ver mercados" %}</a>
+            <a class="enlace-secundario" href="{% url 'catalogo' %}">{% trans "Otro evento" %}</a>
         </p>
     {% else %}
-        <h1 class="compra-titulo">Pase premium</h1>
-        <p class="compra-intro">Abre totales y hándicap de este evento.</p>
+        <h1 class="compra-titulo">{% trans "Pase premium" %}</h1>
+        <p class="compra-intro">{% trans "Abre totales y hándicap de este evento." %}</p>
 
         <div class="panel">
             <div class="panel__fila">
-                <span class="panel__etiqueta">Evento</span>
+                <span class="panel__etiqueta">{% trans "Evento" %}</span>
                 <span class="panel__valor">{{ evento.local }} vs {{ evento.visitante }}</span>
             </div>
             <div class="panel__fila">
-                <span class="panel__etiqueta">Precio</span>
+                <span class="panel__etiqueta">{% trans "Precio" %}</span>
                 <span class="panel__valor">${{ evento.precio_pase|floatformat:"0g" }}</span>
             </div>
             <div class="panel__fila">
-                <span class="panel__etiqueta">IVA 19 %</span>
+                <span class="panel__etiqueta">{% trans "IVA 19 %" %}</span>
                 <span class="panel__valor">${{ iva|floatformat:"0g" }}</span>
             </div>
             <div class="panel__fila">
-                <span class="panel__etiqueta">Total a pagar</span>
+                <span class="panel__etiqueta">{% trans "Total a pagar" %}</span>
                 <span class="panel__valor panel__valor--grande">${{ total|floatformat:"0g" }}</span>
             </div>
         </div>
 
         {% if error %}
-            <div class="mensaje-error">{{ error }}</div>
+            <div class="mensaje-error" role="alert">{{ error }}</div>
         {% endif %}
 
         <form method="post">
             {% csrf_token %}
-            <button type="submit" class="boton-principal">Pagar ${{ total|floatformat:"0g" }} con la pasarela propia</button>
+            <button type="submit" class="boton-principal">{% blocktrans with monto=total|floatformat:"0g" %}Pagar ${{ monto }} con la pasarela propia{% endblocktrans %}</button>
         </form>
-        <p class="nota-pasarela">La pasarela la decide <code>PasarelaFactory</code> según <code>ENV_TYPE</code>.</p>
+        <p class="nota-pasarela">{% blocktrans %}La pasarela la decide <code>PasarelaFactory</code> según <code>ENV_TYPE</code>.{% endblocktrans %}</p>
     {% endif %}
 </main>
 {% endblock %}

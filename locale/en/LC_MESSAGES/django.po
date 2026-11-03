@@ -1,0 +1,174 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Pronostix\n"
+"Report-Msgid-Bugs-To: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Pronostix, ir a la portada"
+msgstr "Pronostix, go to home"
+
+msgid "Idioma"
+msgstr "Language"
+
+msgid "Pronostix es análisis de entretenimiento. Muestra probabilidades; no recibe apuestas."
+msgstr "Pronostix is entertainment analysis. It shows probabilities; it does not take bets."
+
+msgid "Pronostix - Eventos"
+msgstr "Pronostix - Events"
+
+msgid "Pronósticos por evento"
+msgstr "Predictions by event"
+
+msgid "El resultado es gratis; totales y hándicap se abren con el pase del evento o con un plan."
+msgstr "The moneyline is free; totals and handicap unlock with the event pass or a plan."
+
+msgid "En vivo"
+msgstr "Live"
+
+msgid "Ver mercados"
+msgstr "View markets"
+
+msgid "Pase activo"
+msgstr "Active pass"
+
+msgid "Finalizado"
+msgstr "Finished"
+
+msgid "Comprar pase"
+msgstr "Buy pass"
+
+msgid "No hay eventos. Ejecute: <code>python manage.py seed_pronostix</code>"
+msgstr "No events. Run: <code>python manage.py seed_pronostix</code>"
+
+msgid "Datos del equipo aliado"
+msgstr "Allied team data"
+
+msgid "Conectado"
+msgstr "Connected"
+
+msgid "Modo respaldo"
+msgstr "Fallback mode"
+
+msgid "Eventos"
+msgstr "Events"
+
+msgid "Pase activo · todos los mercados abiertos"
+msgstr "Active pass · all markets unlocked"
+
+msgid "Comprar pase · ${{ precio }} + IVA"
+msgstr "Buy pass · ${{ precio }} + VAT"
+
+msgid "Forma reciente externa"
+msgstr "External recent form"
+
+msgid "Forma reciente (API externa)"
+msgstr "Recent form (external API)"
+
+msgid "Fuente: %(fuente)s"
+msgstr "Source: %(fuente)s"
+
+msgid "premium"
+msgstr "premium"
+
+msgid "gratis"
+msgstr "free"
+
+msgid "sí"
+msgstr "yes"
+
+msgid "no"
+msgstr "no"
+
+msgid "Mercado bloqueado. Se abre con el pase de este evento o con un plan Premium o Pro."
+msgstr "Market locked. Unlocks with this event pass or a Premium/Pro plan."
+
+msgid "Más probable:"
+msgstr "Most likely:"
+
+msgid "valor esperado"
+msgstr "expected value"
+
+msgid "Modelo"
+msgstr "Model"
+
+msgid "Sin pronóstico vigente."
+msgstr "No active prediction."
+
+msgid "Este evento aún no tiene mercados. Ejecute <code>python manage.py seed_pronostix</code>."
+msgstr "This event has no markets yet. Run <code>python manage.py seed_pronostix</code>."
+
+msgid "Evento finalizado. Ya no se venden pases."
+msgstr "Event finished. Passes are no longer sold."
+
+msgid "Pase premium"
+msgstr "Premium pass"
+
+msgid "Pago aprobado"
+msgstr "Payment approved"
+
+msgid "Orden"
+msgstr "Order"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Referencia"
+msgstr "Reference"
+
+msgid "Estado"
+msgstr "Status"
+
+msgid "Ver mercados desbloqueados"
+msgstr "View unlocked markets"
+
+msgid "Otro evento"
+msgstr "Another event"
+
+msgid "Ya tienes el pase de este evento"
+msgstr "You already have the pass for this event"
+
+msgid "Totales y hándicap de %(local)s vs %(visitante)s ya están abiertos. No hace falta volver a pagar."
+msgstr "Totals and handicap for %(local)s vs %(visitante)s are already open. No need to pay again."
+
+msgid "Abre totales y hándicap de este evento."
+msgstr "Unlocks totals and handicap for this event."
+
+msgid "Evento"
+msgstr "Event"
+
+msgid "Precio"
+msgstr "Price"
+
+msgid "IVA 19 %"
+msgstr "VAT 19 %"
+
+msgid "Total a pagar"
+msgstr "Amount due"
+
+msgid "Pagar ${{ monto }} con la pasarela propia"
+msgstr "Pay ${{ monto }} with the in-house gateway"
+
+msgid "La pasarela la decide <code>PasarelaFactory</code> según <code>ENV_TYPE</code>."
+msgstr "The gateway is chosen by <code>PasarelaFactory</code> based on <code>ENV_TYPE</code>."
+
+msgid "No encontrado"
+msgstr "Not found"
+
+msgid "Error 404"
+msgstr "Error 404"
+
+msgid "Ese evento no está"
+msgstr "That event is not"
+
+msgid "en el parte"
+msgstr "on the sheet"
+
+msgid "Puede que el enlace esté mal escrito o que el evento ya no exista."
+msgstr "The link may be wrong or the event may no longer exist."
+
+msgid "Ver todos los eventos"
+msgstr "View all events"

@@ -1,10 +1,11 @@
 {% extends 'ventas/base.html' %}
+{% load i18n %}
 
 {% block titulo %}{{ evento.local }} vs {{ evento.visitante }} - Pronostix{% endblock %}
 
 {% block contenido %}
 <main class="pagina evento-relleno-inferior">
-    <a class="volver" href="{% url 'catalogo' %}">Eventos</a>
+    <a class="volver" href="{% url 'catalogo' %}">{% trans "Eventos" %}</a>
 
     <div class="evento-encabezado">
         <div class="evento-titulo-block">
@@ -14,13 +15,21 @@
         </div>
 
         {% if tiene_pase %}
-            <p class="sello-pase sello-pase--grande">Pase activo · todos los mercados abiertos</p>
+            <p class="sello-pase sello-pase--grande">{% trans "Pase activo · todos los mercados abiertos" %}</p>
         {% elif evento.estado != 'finalizado' %}
             <div class="cta">
-                <a class="boton-principal" href="{% url 'comprar_pase' evento.id %}">Comprar pase · ${{ evento.precio_pase|floatformat:"0g" }} + IVA</a>
+                <a class="boton-principal" href="{% url 'comprar_pase' evento.id %}">{% blocktrans with precio=evento.precio_pase|floatformat:"0g" %}Comprar pase · ${{ precio }} + IVA{% endblocktrans %}</a>
             </div>
         {% endif %}
     </div>
+
+    {% if forma_externa %}
+        <aside class="bloque-forma" aria-label="{% trans 'Forma reciente externa' %}">
+            <h2 class="bloque-forma__titulo">{% trans "Forma reciente (API externa)" %}</h2>
+            <p class="bloque-forma__fuente">{% blocktrans with fuente=forma_externa.fuente %}Fuente: {{ fuente }}{% endblocktrans %}</p>
+            <p class="bloque-forma__resumen">{{ forma_externa.resumen }}</p>
+        </aside>
+    {% endif %}
 
     {% if mercados %}
         <ul class="mercados">
@@ -28,7 +37,7 @@
                 <li class="mercado">
                     <div class="mercado__cabecera">
                         <h2 class="mercado__titulo">{{ item.mercado.get_tipo_display }}</h2>
-                        <span class="mercado__etiqueta">{% if item.mercado.es_premium %}premium{% else %}gratis{% endif %}</span>
+                        <span class="mercado__etiqueta">{% if item.mercado.es_premium %}{% trans "premium" %}{% else %}{% trans "gratis" %}{% endif %}</span>
                     </div>
 
                     {% if item.bloqueado %}
@@ -56,16 +65,16 @@
                                 </div>
                             {% else %}
                                 <div class="leyenda__item" style="flex-basis: 50%">
-                                    <span class="leyenda__nombre leyenda__nombre--oculto">sí</span>
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">{% trans "sí" %}</span>
                                     <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
                                 </div>
                                 <div class="leyenda__item" style="flex-basis: 50%">
-                                    <span class="leyenda__nombre leyenda__nombre--oculto">no</span>
+                                    <span class="leyenda__nombre leyenda__nombre--oculto">{% trans "no" %}</span>
                                     <span class="leyenda__valor leyenda__valor--oculto">·· %</span>
                                 </div>
                             {% endif %}
                         </div>
-                        <p class="mercado__bloqueo">Mercado bloqueado. Se abre con el pase de este evento o con un plan Premium o Pro.</p>
+                        <p class="mercado__bloqueo">{% trans "Mercado bloqueado. Se abre con el pase de este evento o con un plan Premium o Pro." %}</p>
                     {% elif item.prediccion %}
                         <div class="banda" aria-hidden="true">
                             {% for opcion, p in item.prediccion.probabilidades.items %}
@@ -80,19 +89,19 @@
                                 </div>
                             {% endfor %}
                         </div>
-                        <p class="mercado__resumen">Más probable: <strong>{% if item.mas_probable == 'local' %}{{ evento.local }}{% elif item.mas_probable == 'visitante' %}{{ evento.visitante }}{% else %}{{ item.mas_probable }}{% endif %}</strong> · valor esperado {{ item.prediccion.valor_esperado }}<br>Modelo {{ item.prediccion.version_modelo }}</p>
+                        <p class="mercado__resumen">{% trans "Más probable:" %} <strong>{% if item.mas_probable == 'local' %}{{ evento.local }}{% elif item.mas_probable == 'visitante' %}{{ evento.visitante }}{% else %}{{ item.mas_probable }}{% endif %}</strong> · {% trans "valor esperado" %} {{ item.prediccion.valor_esperado }}<br>{% trans "Modelo" %} {{ item.prediccion.version_modelo }}</p>
                     {% else %}
-                        <p class="mercado__sin-prediccion">Sin pronóstico vigente.</p>
+                        <p class="mercado__sin-prediccion">{% trans "Sin pronóstico vigente." %}</p>
                     {% endif %}
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p class="vacio">Este evento aún no tiene mercados. Ejecute <code>python manage.py seed_pronostix</code>.</p>
+        <p class="vacio">{% blocktrans %}Este evento aún no tiene mercados. Ejecute <code>python manage.py seed_pronostix</code>.{% endblocktrans %}</p>
     {% endif %}
 
     {% if evento.estado == 'finalizado' %}
-        <p class="evento-nota-cierre">Evento finalizado. Ya no se venden pases.</p>
+        <p class="evento-nota-cierre">{% trans "Evento finalizado. Ya no se venden pases." %}</p>
     {% endif %}
 </main>
 {% endblock %}

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-{% load static %}
-<html lang="es">
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,7 +13,7 @@
 </head>
 <body>
     <header class="encabezado">
-        <a class="logo" href="{% url 'catalogo' %}" aria-label="Pronostix, ir a la portada">
+        <a class="logo" href="{% url 'catalogo' %}" aria-label="{% trans 'Pronostix, ir a la portada' %}">
             <span class="logo-texto">Pronostix</span>
             <span class="logo-banda" aria-hidden="true">
                 <span class="logo-banda__local"></span>
@@ -20,12 +21,26 @@
                 <span class="logo-banda__visitante"></span>
             </span>
         </a>
+        <form action="{% url 'set_language' %}" method="post" class="idioma">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <label class="idioma__etiqueta" for="id_idioma">{% trans "Idioma" %}</label>
+            <select name="language" id="id_idioma" class="idioma__select" onchange="this.form.submit()" aria-label="{% trans 'Idioma' %}">
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                {% for language in languages %}
+                    <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %}>
+                        {{ language.name_local }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
     </header>
 
     {% block contenido %}{% endblock %}
 
     <footer class="pie">
-        Pronostix es análisis de entretenimiento. Muestra probabilidades; no recibe apuestas.
+        {% trans "Pronostix es análisis de entretenimiento. Muestra probabilidades; no recibe apuestas." %}
     </footer>
 </body>
 </html>
