@@ -1,19 +1,22 @@
 from datetime import timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from ventas.domain.acceso import AccesoMercado
 from ventas.domain.builders import OrdenBuilder
 from ventas.domain.modelo import MotorPronostico
-from ventas.infra.factories import PasarelaFactory
+from ventas.infra.aliado import ClienteAliado, RESPALDO_ALIADO
+from ventas.infra.estadisticas import MockEstadisticas
+from ventas.infra.factories import EstadisticasFactory, PasarelaFactory
 from ventas.infra.gateways import MockPasarela, PasarelaPronostix
 from ventas.models import Competicion, Equipo, Evento, Mercado, Orden, Plan, Suscripcion
 from ventas.services import CompraService, PrediccionService
+from ventas.tasks import notificar_compra_pase
 
 
 class _Fixtures:
@@ -127,14 +130,16 @@ class ComprarPaseViewTest(TestCase, _Fixtures):
 
     def test_get_muestra_iva_y_total_antes_de_pagar(self):
         response = self.client.get(reverse('comprar_pase', args=[self.evento.id]))
-        self.assertContains(response, '$2.280')
-        self.assertContains(response, '$14.280')
+        cuerpo = response.content.decode('utf-8').replace('\xa0', '.')
+        self.assertIn('$2.280', cuerpo)
+        self.assertIn('$14.280', cuerpo)
 
     def test_con_pase_no_ofrece_pagar_otra_vez(self):
         self.client.post(reverse('comprar_pase', args=[self.evento.id]))
         response = self.client.get(reverse('comprar_pase', args=[self.evento.id]))
         self.assertContains(response, 'Ya tienes el pase')
-        self.assertNotContains(response, '<form')
+        self.assertNotContains(response, 'boton-principal')
+        self.assertNotContains(response, 'Pagar $')
 
     def test_evento_inexistente_404_con_diseno_propio(self):
         response = self.client.get(reverse('comprar_pase', args=[9999]))
@@ -268,3 +273,101 @@ class ComprarPaseAPITest(TestCase, _Fixtures):
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 409)
+
+
+class IntegracionAPITest(TestCase, _Fixtures):
+    def setUp(self):
+        self.evento = self.crear_evento()
+
+    def test_get_integracion_200(self):
+        response = self.client.get(reverse('api_integracion'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['proyecto'], 'Pronostix')
+        self.assertEqual(data['version_api'], 'v1')
+        self.assertEqual(len(data['eventos']), 1)
+        self.assertEqual(data['eventos'][0]['local'], 'Nacional')
+
+
+class CeleryNotificacionTest(TestCase, _Fixtures):
+    def setUp(self):
+        self.usuario = get_user_model().objects.create_user('camilo_soto', password='x')
+        self.evento = self.crear_evento()
+        self.factory = RequestFactory()
+
+    def test_compra_dispara_tarea_en_eager(self):
+        pasarela = MagicMock()
+        pasarela.procesar.return_value = True
+        request = self.factory.post(f'/comprar/{self.evento.id}/')
+        request.user = self.usuario
+        with patch('ventas.services.notificar_compra_pase.delay') as delay:
+            CompraService(pasarela=pasarela).crear_api(request, self.evento.id)
+            delay.assert_called_once()
+            kwargs = delay.call_args.kwargs
+            self.assertEqual(kwargs['evento_id'], self.evento.id)
+            self.assertEqual(kwargs['usuario'], 'camilo_soto')
+
+    def test_tarea_devuelve_mensaje(self):
+        mensaje = notificar_compra_pase(
+            orden_id=1, evento_id=2, usuario='camilo', total='14280.00', referencia='PX-1',
+        )
+        self.assertIn('orden=1', mensaje)
+        self.assertIn('PX-1', mensaje)
+
+
+class EstadisticasAdapterTest(TestCase):
+    def test_factory_mock_por_defecto(self):
+        import os
+        os.environ.pop('STATS_PROVIDER', None)
+        self.assertIsInstance(EstadisticasFactory.get_proveedor(), MockEstadisticas)
+
+    def test_mock_devuelve_forma(self):
+        forma = MockEstadisticas().forma_reciente('Nacional', 'Millonarios', 'futbol')
+        self.assertTrue(forma['disponible'])
+        self.assertEqual(forma['fuente'], 'mock-interno')
+        self.assertIn('Nacional', forma['resumen'])
+
+
+class ClienteAliadoTest(TestCase):
+    def test_sin_url_usa_respaldo(self):
+        datos = ClienteAliado(url='').obtener_resumen()
+        self.assertFalse(datos['disponible'])
+        self.assertEqual(datos['proyecto'], RESPALDO_ALIADO['proyecto'])
+
+    def test_url_caida_degrada(self):
+        with patch('ventas.infra.aliado.requests.get', side_effect=ConnectionError('down')):
+            datos = ClienteAliado(url='http://aliado.invalid/api').obtener_resumen()
+        self.assertFalse(datos['disponible'])
+        self.assertIn('no disponible', datos['mensaje'].lower())
+
+
+class CatalogoAliadoYFormaTest(TestCase, _Fixtures):
+    def setUp(self):
+        self.evento = self.crear_evento()
+        Mercado.objects.create(evento=self.evento, tipo='moneyline', es_premium=False)
+        PrediccionService().generar_para(self.evento)
+
+    def test_catalogo_muestra_bloque_aliado(self):
+        response = self.client.get(reverse('catalogo'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Datos del equipo aliado')
+        self.assertContains(response, 'Modo respaldo')
+
+    def test_detalle_incluye_forma_externa(self):
+        response = self.client.get(reverse('evento_detalle', args=[self.evento.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Forma reciente')
+        self.assertContains(response, 'mock-interno')
+
+
+@override_settings(LANGUAGE_CODE='en')
+class I18nSmokeTest(TestCase, _Fixtures):
+    def setUp(self):
+        self.evento = self.crear_evento()
+
+    def test_catalogo_en_ingles(self):
+        self.client.cookies['django_language'] = 'en'
+        response = self.client.get(reverse('catalogo'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Predictions by event')
+        self.assertContains(response, 'Buy pass')
