@@ -10,7 +10,7 @@ Flujo critico **comprar pase premium**: CBV y APIView delgadas, logica en `Compr
 
 Documentacion del patron creacional: Wiki **[Implementación del Patrón Creacional](https://github.com/jdj40211/pronostix/wiki)**.
 
-## Cómo ejecutar
+## Cómo ejecutar (local, sin Docker)
 
 ```powershell
 python -m venv venv
@@ -21,7 +21,15 @@ python manage.py seed_pronostix
 python manage.py runserver
 ```
 
-Abra http://127.0.0.1:8000/ para ver eventos. El **moneyline** es free; totales y handicap se desbloquean con el pase del evento o un plan Premium/Pro vigente.
+Abra http://127.0.0.1:8000/ para ver eventos. El **moneyline** es free; totales y handicap se desbloquean con el pase del evento o un plan Premium/Pro vigente. Selector de idioma ES/EN en el encabezado.
+
+Para Celery en local (opcional): levante Redis y un worker:
+
+```powershell
+docker run -d -p 6379:6379 redis:7-alpine
+$env:CELERY_BROKER_URL="redis://localhost:6379/0"
+celery -A config worker -l info
+```
 
 ## Factory: MOCK vs REAL
 
@@ -31,6 +39,9 @@ $env:ENV_TYPE="MOCK"; python manage.py runserver
 
 # Log de auditoria pasarela_CAMILO_SOTO.log
 $env:ENV_TYPE="REAL"; python manage.py runserver
+
+# Estadisticas externas (TheSportsDB) via Adapter
+$env:STATS_PROVIDER="REAL"; python manage.py runserver
 ```
 
 ## Estructura
@@ -40,26 +51,31 @@ ventas/
   views.py              Capa de interfaz (CBV delgada, sin ORM)
   api/views.py          APIView + serializers (sin logica de negocio)
   services.py           CompraService, CatalogoService, PrediccionService
+  tasks.py              Celery: notificacion asincrona post-compra
   domain/logic.py       IVA, reglas de plan y evento
   domain/builders.py    Patron Builder (Fluent Interface)
   domain/acceso.py      Derecho de uso (pase o suscripcion)
   domain/modelo.py      Calculo de probabilidades por deporte
-  domain/interfaces.py  Abstraccion PasarelaPago (DIP)
-  infra/factories.py    Patron Factory (ENV_TYPE)
+  domain/interfaces.py  PasarelaPago + ProveedorEstadisticas (DIP)
+  infra/factories.py    PasarelaFactory + EstadisticasFactory
   infra/gateways.py     MOCK (consola) y REAL (pasarela propia)
+  infra/estadisticas.py Adapter TheSportsDB / Mock
+  infra/aliado.py       Cliente HTTP del equipo aliado
+locale/                 gettext ES/EN
 ```
 
-## API (Entregable 1, avance)
+## API
 
 ```powershell
 # Listar eventos
 curl http://127.0.0.1:8000/api/v1/eventos/
 
+# Integracion (JSON para el equipo aliado)
+curl http://127.0.0.1:8000/api/v1/integracion/
+
 # Comprar pase (201). Si el evento no existe: 404. Si ya hay pase o esta finalizado: 409.
 curl -X POST http://127.0.0.1:8000/api/v1/comprar/ -H "Content-Type: application/json" -d "{\"evento_id\": 1}"
 ```
-
-La vista API solo valida el serializer y llama a `CompraService`. Builder y Factory siguen en dominio/infra.
 
 ## Taller 02: Strangler Pattern (Django + Flask + Nginx)
 
@@ -78,16 +94,49 @@ curl -X POST http://localhost/api/v2/pronosticos/ -H "Content-Type: application/
 
 Si el puerto 80 esta ocupado: `$env:NGINX_PORT=8080; docker compose up -d`.
 
+## Entregable 2: Integracion y resiliencia
+
+Arquitectura hibrida con broker, i18n, Adapter a terceros y consumo/exposicion de APIs.
+
 ```
-docker-compose.yml          db (PostgreSQL) + web_django + pronosticos_flask + nginx
-Dockerfile                  Imagen del monolito (Gunicorn)
-nginx/nginx.conf            Bifurcacion del trafico por URL
-microservicio_pronosticos/  app.py (API), motor.py (logica), Dockerfile propio
+Cliente → Nginx → Django (v1) | Flask (v2)
+                → Redis ← Celery worker
+Django → Adapter TheSportsDB / Mock
+Django → HTTP aliado (ALIADO_API_URL)
 ```
+
+```powershell
+docker compose up -d --build
+# redis + worker + db + web_django + pronosticos_flask + nginx
+
+# Tras comprar un pase, el worker registra la notificacion:
+docker compose logs worker
+```
+
+Variables utiles:
+
+| Variable | Default | Uso |
+|---|---|---|
+| `CELERY_BROKER_URL` | `redis://redis:6379/0` | Broker Celery |
+| `ALIADO_API_URL` | vacio | URL JSON del equipo aliado |
+| `STATS_PROVIDER` | `MOCK` | `MOCK` o `REAL` (TheSportsDB) |
+| `NGINX_PORT` | `80` | Puerto publicado del gateway |
+
+### CI/CD y Swarm (AWS Academy)
+
+1. En GitHub → Settings → Secrets: `DOCKERHUB_USER`, `DOCKERHUB_PASS`.
+2. Push a `main` dispara `.github/workflows/main.yml` y publica imagenes en Docker Hub.
+3. En EC2 (manager): `docker swarm init` y en el worker: `docker swarm join ...`.
+4. Despliegue: `DOCKERHUB_USER=tu_usuario docker stack deploy -c docker-stack.yml pronostix`.
+
+Security Group: 22, 80, 2377/tcp, 7946/tcp+udp, 4789/udp.
+
+Wiki: **[Entregable 2 - Integración y Resiliencia](https://github.com/jdj40211/pronostix/wiki/Entregable-2-Integraci%C3%B3n-y-Resiliencia)**.
 
 ## Tests
 
 ```powershell
+$env:CELERY_TASK_ALWAYS_EAGER="1"
 python manage.py test
 cd microservicio_pronosticos; python -m unittest -v
 ```
