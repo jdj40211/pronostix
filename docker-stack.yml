@@ -1,0 +1,96 @@
+version: "3.8"
+
+services:
+  gateway:
+    image: ${DOCKERHUB_USER:-pronostix}/pronostix-nginx:latest
+    ports:
+      - "80:80"
+    networks:
+      - back-tier
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == manager
+
+  web_django:
+    image: ${DOCKERHUB_USER:-pronostix}/pronostix-monolito:latest
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=pronostix_db
+      - DB_USER=postgres
+      - DB_PASSWORD=secret_password
+      - DJANGO_DEBUG=0
+      - DJANGO_ALLOWED_HOSTS=*
+      - ENV_TYPE=REAL
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - STATS_PROVIDER=MOCK
+      - ALIADO_API_URL=
+    networks:
+      - back-tier
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+  worker:
+    image: ${DOCKERHUB_USER:-pronostix}/pronostix-monolito:latest
+    command: celery -A config worker -l info
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=pronostix_db
+      - DB_USER=postgres
+      - DB_PASSWORD=secret_password
+      - DJANGO_DEBUG=0
+      - DJANGO_ALLOWED_HOSTS=*
+      - ENV_TYPE=REAL
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    networks:
+      - back-tier
+    deploy:
+      replicas: 2
+
+  pronosticos_flask:
+    image: ${DOCKERHUB_USER:-pronostix}/pronostix-pronosticos:latest
+    networks:
+      - back-tier
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=pronostix_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret_password
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - back-tier
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - back-tier
+    deploy:
+      replicas: 1
+
+networks:
+  back-tier:
+    driver: overlay
+
+volumes:
+  db_data:
