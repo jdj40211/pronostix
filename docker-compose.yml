@@ -13,12 +13,21 @@ services:
       timeout: 3s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # Monolito (v1): catalogo, compra de pases, acceso y vistas HTML.
   web_django:
     build: .
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
+             python manage.py compilemessages --ignore=venv &&
              python manage.py seed_pronostix &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     environment:
@@ -30,10 +39,37 @@ services:
       - DJANGO_DEBUG=0
       - DJANGO_ALLOWED_HOSTS=*
       - ENV_TYPE=REAL
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - STATS_PROVIDER=${STATS_PROVIDER:-MOCK}
+      - ALIADO_API_URL=${ALIADO_API_URL:-}
     volumes:
       - static_data:/app/staticfiles
     depends_on:
       db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Worker Celery: misma imagen del monolito, tareas en segundo plano.
+  worker:
+    build: .
+    command: celery -A config worker -l info
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=pronostix_db
+      - DB_USER=postgres
+      - DB_PASSWORD=secret_password
+      - DJANGO_DEBUG=0
+      - DJANGO_ALLOWED_HOSTS=*
+      - ENV_TYPE=REAL
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   # Microservicio (v2): motor de pronosticos estrangulado del monolito.
