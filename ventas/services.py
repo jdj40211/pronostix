@@ -7,6 +7,7 @@ from .domain.logic import CalculadorImpuestos
 from .domain.modelo import MotorPronostico
 from .infra.aliado import ClienteAliado
 from .infra.factories import EstadisticasFactory
+from .infra.http_clients import ClienteCatalogoMS
 from .models import Evento, ModeloPredictivo, Prediccion, Transaccion
 from .tasks import notificar_compra_pase
 
@@ -69,6 +70,8 @@ class CompraService:
             orden.delete()
             raise ValueError('La pasarela rechazo el pago.')
         orden.confirmar_pago()
+        # Sincroniza el pase con el microservicio de catalogo (mejor esfuerzo).
+        ClienteCatalogoMS().sincronizar_pase(usuario.username, evento.id)
         notificar_compra_pase.delay(
             orden_id=orden.id,
             evento_id=evento.id,
@@ -108,7 +111,13 @@ class CatalogoService:
         }
 
     def payload_integracion(self):
-        """JSON estable que el equipo aliado puede consumir."""
+        """JSON estable: prefiere el MS de catalogo; si no, el monolito."""
+        remoto = ClienteCatalogoMS().integracion()
+        if remoto:
+            remoto = dict(remoto)
+            remoto['origen'] = 'microservicio_catalogo'
+            return remoto
+
         eventos = []
         for evento in self.listar().filter(estado__in=['programado', 'en_vivo']):
             eventos.append({
@@ -124,6 +133,7 @@ class CatalogoService:
         return {
             'proyecto': 'Pronostix',
             'version_api': 'v1',
+            'origen': 'monolito_django',
             'equipo': ['Juan David Sierra', 'Juan José Palacio', 'Camilo Soto'],
             'descripcion': (
                 'Proyecciones estadisticas para apuestas deportivas. '

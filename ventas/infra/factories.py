@@ -4,17 +4,21 @@ from django.conf import settings
 
 from .estadisticas import MockEstadisticas, TheSportsDbAdapter
 from .gateways import MockPasarela, PasarelaPronostix
+from .http_clients import HttpEstadisticas, HttpPasarela
 
 
 class PasarelaFactory:
     """
-    Factory Method: la vista y el servicio no deciden que pasarela crear.
-    El comportamiento cambia con ENV_TYPE=MOCK o ENV_TYPE=REAL.
+    Factory Method: si PAGOS_URL esta definida, el cobro va al microservicio Flask.
+    Si no, usa las implementaciones locales (tests / runserver sin Docker).
     """
 
     @staticmethod
     def get_pasarela():
+        pagos_url = os.getenv('PAGOS_URL', getattr(settings, 'PAGOS_URL', '')).strip()
         env_type = os.getenv('ENV_TYPE', 'REAL').upper()
+        if pagos_url:
+            return HttpPasarela(base_url=pagos_url, modo=env_type)
         if env_type == 'MOCK':
             return MockPasarela()
         return PasarelaPronostix()
@@ -22,12 +26,19 @@ class PasarelaFactory:
 
 class EstadisticasFactory:
     """
-    Elige el Adapter de estadisticas externas segun STATS_PROVIDER.
-    MOCK: datos locales. REAL: TheSportsDB (API de terceros).
+    Si ESTADISTICAS_URL esta definida, consulta el microservicio.
+    Si no, Adapter local MOCK/REAL (TheSportsDB).
     """
 
     @staticmethod
     def get_proveedor():
+        url = os.getenv(
+            'ESTADISTICAS_URL',
+            getattr(settings, 'ESTADISTICAS_URL', ''),
+        ).strip()
+        if url:
+            return HttpEstadisticas(base_url=url)
+
         proveedor = os.getenv(
             'STATS_PROVIDER',
             getattr(settings, 'STATS_PROVIDER', 'MOCK'),

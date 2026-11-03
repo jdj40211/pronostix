@@ -14,6 +14,7 @@ from ventas.infra.aliado import ClienteAliado, RESPALDO_ALIADO
 from ventas.infra.estadisticas import MockEstadisticas
 from ventas.infra.factories import EstadisticasFactory, PasarelaFactory
 from ventas.infra.gateways import MockPasarela, PasarelaPronostix
+from ventas.infra.http_clients import HttpPasarela
 from ventas.models import Competicion, Equipo, Evento, Mercado, Orden, Plan, Suscripcion
 from ventas.services import CompraService, PrediccionService
 from ventas.tasks import notificar_compra_pase
@@ -77,6 +78,7 @@ class PasarelaFactoryTest(TestCase):
     def test_mock_usa_consola(self):
         import os
         os.environ['ENV_TYPE'] = 'MOCK'
+        os.environ.pop('PAGOS_URL', None)
         try:
             self.assertIsInstance(PasarelaFactory.get_pasarela(), MockPasarela)
         finally:
@@ -85,10 +87,19 @@ class PasarelaFactoryTest(TestCase):
     def test_real_usa_pasarela_propia(self):
         import os
         os.environ['ENV_TYPE'] = 'REAL'
+        os.environ.pop('PAGOS_URL', None)
         try:
             self.assertIsInstance(PasarelaFactory.get_pasarela(), PasarelaPronostix)
         finally:
             os.environ.pop('ENV_TYPE', None)
+
+    def test_con_pagos_url_usa_http(self):
+        import os
+        os.environ['PAGOS_URL'] = 'http://pagos_flask:5001'
+        try:
+            self.assertIsInstance(PasarelaFactory.get_pasarela(), HttpPasarela)
+        finally:
+            os.environ.pop('PAGOS_URL', None)
 
 
 class CompraServiceTest(TestCase, _Fixtures):
@@ -319,6 +330,7 @@ class EstadisticasAdapterTest(TestCase):
     def test_factory_mock_por_defecto(self):
         import os
         os.environ.pop('STATS_PROVIDER', None)
+        os.environ.pop('ESTADISTICAS_URL', None)
         self.assertIsInstance(EstadisticasFactory.get_proveedor(), MockEstadisticas)
 
     def test_mock_devuelve_forma(self):

@@ -176,3 +176,9 @@ CELERY_RESULT_SERIALIZER = 'json'
 ALIADO_API_URL = os.getenv('ALIADO_API_URL', '')
 STATS_PROVIDER = os.getenv('STATS_PROVIDER', 'MOCK').upper()
 THESPORTSDB_API_KEY = os.getenv('THESPORTSDB_API_KEY', '123')
+
+# Microservicios Flask (vacío = fallback local para tests / runserver).
+PAGOS_URL = os.getenv('PAGOS_URL', '')
+CATALOGO_URL = os.getenv('CATALOGO_URL', '')
+ESTADISTICAS_URL = os.getenv('ESTADISTICAS_URL', '')
+PRONOSTICOS_URL = os.getenv('PRONOSTICOS_URL', '')
