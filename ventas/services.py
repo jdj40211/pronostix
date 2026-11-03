@@ -5,7 +5,10 @@ from .domain.builders import OrdenBuilder
 from .domain.exceptions import ConflictoNegocio, EventoNoEncontrado
 from .domain.logic import CalculadorImpuestos
 from .domain.modelo import MotorPronostico
+from .infra.aliado import ClienteAliado
+from .infra.factories import EstadisticasFactory
 from .models import Evento, ModeloPredictivo, Prediccion, Transaccion
+from .tasks import notificar_compra_pase
 
 
 def usuario_de(request):
@@ -66,6 +69,13 @@ class CompraService:
             orden.delete()
             raise ValueError('La pasarela rechazo el pago.')
         orden.confirmar_pago()
+        notificar_compra_pase.delay(
+            orden_id=orden.id,
+            evento_id=evento.id,
+            usuario=usuario.username,
+            total=str(orden.total),
+            referencia=transaccion.referencia,
+        )
         return {'orden': orden, 'transaccion': transaccion, 'evento': evento}
 
     def crear(self, request, evento_id):
@@ -94,6 +104,32 @@ class CatalogoService:
         return {
             'eventos': self.listar(),
             'eventos_con_pase': AccesoMercado.eventos_con_pase(usuario_de(request)),
+            'aliado': ClienteAliado().obtener_resumen(),
+        }
+
+    def payload_integracion(self):
+        """JSON estable que el equipo aliado puede consumir."""
+        eventos = []
+        for evento in self.listar().filter(estado__in=['programado', 'en_vivo']):
+            eventos.append({
+                'id': evento.id,
+                'local': str(evento.local),
+                'visitante': str(evento.visitante),
+                'competicion': str(evento.competicion),
+                'deporte': evento.competicion.deporte,
+                'fecha': evento.fecha.isoformat(),
+                'precio_pase': str(evento.precio_pase),
+                'mercados_free': ['moneyline'],
+            })
+        return {
+            'proyecto': 'Pronostix',
+            'version_api': 'v1',
+            'equipo': ['Juan David Sierra', 'Juan José Palacio', 'Camilo Soto'],
+            'descripcion': (
+                'Proyecciones estadisticas para apuestas deportivas. '
+                'Expone eventos vigentes y mercados free.'
+            ),
+            'eventos': eventos,
         }
 
 
@@ -114,10 +150,17 @@ class PrediccionService:
                 'mas_probable': MotorPronostico.mas_probable(prediccion.probabilidades) if prediccion else None,
                 'bloqueado': not visible,
             })
+        proveedor = EstadisticasFactory.get_proveedor()
+        forma = proveedor.forma_reciente(
+            str(evento.local),
+            str(evento.visitante),
+            evento.competicion.deporte,
+        )
         return {
             'evento': evento,
             'mercados': mercados,
             'tiene_pase': AccesoMercado.tiene_pase(usuario, evento),
+            'forma_externa': forma,
         }
 
     def generar_para(self, evento):

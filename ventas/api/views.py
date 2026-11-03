@@ -15,6 +15,13 @@ class EventoListAPIView(APIView):
         return Response(EventoSerializer(eventos, many=True).data)
 
 
+class IntegracionAPIView(APIView):
+    """Endpoint que el equipo aliado consume: JSON estable del sistema."""
+
+    def get(self, request):
+        return Response(CatalogoService().payload_integracion())
+
+
 class ComprarPaseAPIView(APIView):
     def post(self, request):
         serializer = ComprarPaseSerializer(data=request.data)
