@@ -17,8 +17,14 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USER }}/pronostix-monolito:latest .
           docker build -t ${{ secrets.DOCKERHUB_USER }}/pronostix-pronosticos:latest ./microservicio_pronosticos
+          docker build -t ${{ secrets.DOCKERHUB_USER }}/pronostix-pagos:latest ./microservicio_pagos
+          docker build -t ${{ secrets.DOCKERHUB_USER }}/pronostix-catalogo:latest ./microservicio_catalogo
+          docker build -t ${{ secrets.DOCKERHUB_USER }}/pronostix-estadisticas:latest ./microservicio_estadisticas
           docker build -t ${{ secrets.DOCKERHUB_USER }}/pronostix-nginx:latest ./nginx
 
           docker push ${{ secrets.DOCKERHUB_USER }}/pronostix-monolito:latest
           docker push ${{ secrets.DOCKERHUB_USER }}/pronostix-pronosticos:latest
+          docker push ${{ secrets.DOCKERHUB_USER }}/pronostix-pagos:latest
+          docker push ${{ secrets.DOCKERHUB_USER }}/pronostix-catalogo:latest
+          docker push ${{ secrets.DOCKERHUB_USER }}/pronostix-estadisticas:latest
           docker push ${{ secrets.DOCKERHUB_USER }}/pronostix-nginx:latest

@@ -21,7 +21,7 @@ services:
       timeout: 3s
       retries: 10
 
-  # Monolito (v1): catalogo, compra de pases, acceso y vistas HTML.
+  # Orquestador HTML + API v1 (compra). Delega cobro/catalogo/stats a Flask.
   web_django:
     build: .
     command: >
@@ -43,6 +43,10 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - STATS_PROVIDER=${STATS_PROVIDER:-MOCK}
       - ALIADO_API_URL=${ALIADO_API_URL:-}
+      - PAGOS_URL=http://pagos_flask:5001
+      - CATALOGO_URL=http://catalogo_flask:5002
+      - ESTADISTICAS_URL=http://estadisticas_flask:5003
+      - PRONOSTICOS_URL=http://pronosticos_flask:5000
     volumes:
       - static_data:/app/staticfiles
     depends_on:
@@ -50,8 +54,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pagos_flask:
+        condition: service_started
+      catalogo_flask:
+        condition: service_started
+      estadisticas_flask:
+        condition: service_started
 
-  # Worker Celery: misma imagen del monolito, tareas en segundo plano.
   worker:
     build: .
     command: celery -A config worker -l info
@@ -66,15 +75,27 @@ services:
       - ENV_TYPE=REAL
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PAGOS_URL=http://pagos_flask:5001
+      - CATALOGO_URL=http://catalogo_flask:5002
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
 
-  # Microservicio (v2): motor de pronosticos estrangulado del monolito.
   pronosticos_flask:
     build: ./microservicio_pronosticos
+
+  pagos_flask:
+    build: ./microservicio_pagos
+
+  catalogo_flask:
+    build: ./microservicio_catalogo
+
+  estadisticas_flask:
+    build: ./microservicio_estadisticas
+    environment:
+      - STATS_PROVIDER=${STATS_PROVIDER:-MOCK}
 
   nginx:
     image: nginx:1.25-alpine
@@ -86,6 +107,9 @@ services:
     depends_on:
       - web_django
       - pronosticos_flask
+      - pagos_flask
+      - catalogo_flask
+      - estadisticas_flask
 
 volumes:
   postgres_data:
