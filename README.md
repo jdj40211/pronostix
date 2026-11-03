@@ -94,20 +94,34 @@ curl -X POST http://localhost/api/v2/pronosticos/ -H "Content-Type: application/
 
 Si el puerto 80 esta ocupado: `$env:NGINX_PORT=8080; docker compose up -d`.
 
-## Entregable 2: Integracion y resiliencia
+## Entregable 2: Integracion y resiliencia (+ bono >70%)
 
-Arquitectura hibrida con broker, i18n, Adapter a terceros y consumo/exposicion de APIs.
+Arquitectura hibrida: Django queda como orquestador HTML/compra v1; **mas del 70%**
+de la logica de negocio vive en microservicios Flask independientes.
+
+| Microservicio | Ruta Nginx | Logica |
+|---|---|---|
+| `pronosticos_flask` | `/api/v2/pronosticos/` | Motor de probabilidades |
+| `pagos_flask` | `/api/v2/pagos/` | Pasarela MOCK/REAL |
+| `catalogo_flask` | `/api/v2/catalogo/` | Eventos, mercados, IVA, integracion |
+| `estadisticas_flask` | `/api/v2/estadisticas/` | Adapter TheSportsDB / Mock |
 
 ```
-Cliente → Nginx → Django (v1) | Flask (v2)
+Cliente → Nginx → Django (HTML + /api/v1/compra)
+                → Flask x4 (/api/v2/*)
                 → Redis ← Celery worker
-Django → Adapter TheSportsDB / Mock
-Django → HTTP aliado (ALIADO_API_URL)
+Django --HTTP--> pagos / catalogo / estadisticas / pronosticos
 ```
 
 ```powershell
 docker compose up -d --build
-# redis + worker + db + web_django + pronosticos_flask + nginx
+docker compose ps
+# db + redis + worker + web_django + 4 flask + nginx
+
+curl http://localhost/api/v2/catalogo/eventos/
+curl http://localhost/api/v2/pagos/salud
+curl http://localhost/api/v2/estadisticas/salud
+curl -X POST http://localhost/api/v2/pronosticos/ -H "Content-Type: application/json" -d "{\"deporte\":\"futbol\",\"mercados\":[\"moneyline\"]}"
 
 # Tras comprar un pase, el worker registra la notificacion:
 docker compose logs worker
@@ -120,6 +134,9 @@ Variables utiles:
 | `CELERY_BROKER_URL` | `redis://redis:6379/0` | Broker Celery |
 | `ALIADO_API_URL` | vacio | URL JSON del equipo aliado |
 | `STATS_PROVIDER` | `MOCK` | `MOCK` o `REAL` (TheSportsDB) |
+| `PAGOS_URL` | (compose) `http://pagos_flask:5001` | MS pasarela |
+| `CATALOGO_URL` | (compose) `http://catalogo_flask:5002` | MS catalogo |
+| `ESTADISTICAS_URL` | (compose) `http://estadisticas_flask:5003` | MS stats |
 | `NGINX_PORT` | `80` | Puerto publicado del gateway |
 
 ### CI/CD y Swarm (AWS Academy)
@@ -139,6 +156,9 @@ Wiki: **[Entregable 2 - Integración y Resiliencia](https://github.com/jdj40211/
 $env:CELERY_TASK_ALWAYS_EAGER="1"
 python manage.py test
 cd microservicio_pronosticos; python -m unittest -v
+cd ..\microservicio_pagos; python -m unittest -v
+cd ..\microservicio_catalogo; python -m unittest -v
+cd ..\microservicio_estadisticas; python -m unittest -v
 ```
 
 ## Contenido de dominio
