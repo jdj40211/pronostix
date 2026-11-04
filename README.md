@@ -139,6 +139,24 @@ Variables utiles:
 | `ESTADISTICAS_URL` | (compose) `http://estadisticas_flask:5003` | MS stats |
 | `NGINX_PORT` | `80` | Puerto publicado del gateway |
 
+### Despliegue en AWS Academy (EC2 + Docker Compose)
+
+Arquitectura completa con diagramas (AWS, Nginx, Flask, Redis): [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md).
+
+En una EC2 Amazon Linux 2023 (t3.medium, 20 GB, Security Group con 22 y 80 abiertos) el
+ecosistema completo se levanta con un solo comando, que instala Docker y el plugin de
+Compose, crea 2 GB de swap, clona el repo y corre `docker compose up -d --build`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jdj40211/pronostix/main/deploy/ec2-bootstrap.sh | bash
+```
+
+Variables del script: `RAMA` (default `main`), `STATS_PROVIDER` (default `REAL`, usa
+TheSportsDB) y `ALIADO_API_URL` (opcional, endpoint JSON del equipo aliado).
+
+Tras apagar y volver a iniciar el laboratorio, los 9 servicios se recuperan solos
+(`restart: unless-stopped`); la IP elástica no cambia.
+
 ### CI/CD y Swarm (AWS Academy)
 
 1. En GitHub → Settings → Secrets: `DOCKERHUB_USER`, `DOCKERHUB_PASS`.
