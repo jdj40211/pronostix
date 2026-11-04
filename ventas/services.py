@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 
 from .domain.acceso import AccesoMercado
@@ -10,6 +12,9 @@ from .infra.factories import EstadisticasFactory
 from .infra.http_clients import ClienteCatalogoMS
 from .models import Evento, ModeloPredictivo, Prediccion, Transaccion
 from .tasks import notificar_compra_pase
+
+
+logger = logging.getLogger(__name__)
 
 
 def usuario_de(request):
@@ -72,14 +77,28 @@ class CompraService:
         orden.confirmar_pago()
         # Sincroniza el pase con el microservicio de catalogo (mejor esfuerzo).
         ClienteCatalogoMS().sincronizar_pase(usuario.username, evento.id)
-        notificar_compra_pase.delay(
-            orden_id=orden.id,
-            evento_id=evento.id,
-            usuario=usuario.username,
-            total=str(orden.total),
-            referencia=transaccion.referencia,
-        )
+        self._notificar(orden, evento, usuario, transaccion)
         return {'orden': orden, 'transaccion': transaccion, 'evento': evento}
+
+    @staticmethod
+    def _notificar(orden, evento, usuario, transaccion):
+        """
+        Encola la notificacion de fondo. Si el broker no responde, la compra
+        ya esta pagada: se registra el fallo y se sigue (resiliencia).
+        """
+        try:
+            notificar_compra_pase.delay(
+                orden_id=orden.id,
+                evento_id=evento.id,
+                usuario=usuario.username,
+                total=str(orden.total),
+                referencia=transaccion.referencia,
+            )
+        except Exception:  # noqa: BLE001 - el broker es un servicio externo
+            logger.warning(
+                'Broker no disponible: notificacion de la orden %s sin encolar.',
+                orden.id, exc_info=True,
+            )
 
     def crear(self, request, evento_id):
         contexto = self.preparar(request, evento_id)

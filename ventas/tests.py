@@ -318,6 +318,18 @@ class CeleryNotificacionTest(TestCase, _Fixtures):
             self.assertEqual(kwargs['evento_id'], self.evento.id)
             self.assertEqual(kwargs['usuario'], 'camilo_soto')
 
+    def test_compra_sobrevive_si_el_broker_no_responde(self):
+        pasarela = MagicMock()
+        pasarela.procesar.return_value = True
+        request = self.factory.post(f'/comprar/{self.evento.id}/')
+        request.user = self.usuario
+        with patch(
+            'ventas.services.notificar_compra_pase.delay',
+            side_effect=ConnectionError('redis caido'),
+        ):
+            resultado = CompraService(pasarela=pasarela).crear_api(request, self.evento.id)
+        self.assertEqual(resultado['orden'].estado, 'pagada')
+
     def test_tarea_devuelve_mensaje(self):
         mensaje = notificar_compra_pase(
             orden_id=1, evento_id=2, usuario='camilo', total='14280.00', referencia='PX-1',
